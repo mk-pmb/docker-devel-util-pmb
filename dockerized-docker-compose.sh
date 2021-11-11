@@ -14,6 +14,7 @@ function dockerized_docker_compose () {
     --volume="${PWD:-/proc/E/err_no_pwd}:$INSIDE_PREFIX:rw"
     --env COMPOSE_PROJECT_NAME
     --rm
+    --name "${COMPOSE_PROJECT_NAME}_compose_$$"
     )
 
   doco_compofile || return $?

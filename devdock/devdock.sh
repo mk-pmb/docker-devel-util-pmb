@@ -59,7 +59,12 @@ function devdock_terminalize () {
   local TA_GEOM='150x35'
   local TA_ICON='other-driver'
   local TA_CWD="$SELFPATH"
-  wmsess__ensure_terminal_app "$LT_TITLE" "$WSP" "$SELFFILE"
+  local SELF_CMD=(
+    env
+    DEVDOCK_DIR="$PWD"
+    "$SELFFILE"
+    )
+  wmsess__ensure_terminal_app "$LT_TITLE" "$WSP" "${SELF_CMD[@]}"
   return $?
 }
 

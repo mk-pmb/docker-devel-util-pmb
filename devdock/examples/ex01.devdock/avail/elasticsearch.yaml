@@ -5,7 +5,7 @@
 version: '3'
 services:
 
-  elasticsearch:
+  ${dd_tpl_bn}'_db':
     image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0
     environment:
       - "discovery.type=single-node"
@@ -13,7 +13,7 @@ services:
       - "127.0.0.1:9200:9200"
       - "127.0.0.1:9300:9300"
 
-  elastic_hq:
+  ${dd_tpl_bn}'_hq':
     image: elastichq/elasticsearch-hq
     ports:
       - "127.0.0.1:9205:5000"

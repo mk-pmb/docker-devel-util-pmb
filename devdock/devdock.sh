@@ -177,8 +177,11 @@ function devdock_recompose__one_enab () {
   YAML="${YAML%$'\n'}"
   YAML="$(<<<"$YAML" "$SELFPATH"/src/highlight_slots.sed)"
 
+  local ENAB_BFN="$(basename -- "$ENAB_FILE")"
   YAML="${YAML//$'\f<var dd_dir >'/$DD_DIR/}"
   YAML="${YAML//$'\f<var dd_proj >'/$DD_PROJ}"
+  YAML="${YAML//$'\f<var dd_tpl >'/$ENAB_BFN}"
+  YAML="${YAML//$'\f<var dd_tpl_bn >'/${ENAB_BFN%.yaml}}"
 
   local KEY= VAL=
   for KEY in "${!ENV_SECRETS[@]}"; do

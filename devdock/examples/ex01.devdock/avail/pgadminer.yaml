@@ -1,0 +1,26 @@
+%YAML 1.1
+# -*- coding: UTF-8, tab-width: 4 -*-
+---
+
+version: '3'
+services:
+
+  ${dd_tpl_bn}'':
+    image: 'adminer:latest'
+    restart: always
+    environment:
+        # For available PHP settings, see https://github.com/wodby/php
+        # For available Adminer settings, see https://github.com/wodby/adminer
+        - 'ADMINER_DEFAULT_DB_DRIVER=pgsql'
+        - 'ADMINER_DEFAULT_SERVER=postgres'
+        - 'ADMINER_DEFAULT_PORT=5432'
+        - 'ADMINER_DEFAULT_DB=magic'
+        - 'ADMINER_DEFAULT_USER=postgres'
+        - ${env_secret}'ADMINER_DEFAULT_PASSWORD=POSTGRES_PASSWORD'
+        - 'ADMINER_DESIGN=pepa-linha-dark'
+        - 'ADMINER_PLUGINS='
+    ports:
+      - '127.0.0.1:5480:8080'
+
+
+...

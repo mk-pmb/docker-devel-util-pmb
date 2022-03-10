@@ -1,0 +1,24 @@
+%YAML 1.1
+# -*- coding: UTF-8, tab-width: 4 -*-
+---
+
+version: '3'
+services:
+
+  ${dd_tpl_bn}'':
+    image: 'node:16'
+
+    command: sh -c 'date -R && exec sleep 9009009d'
+    # ^-- To start an actual debug shell, run:
+    #       docker exec --interactive --tty ex01_debug_shell_1 bash -i
+
+    restart: 'always'
+    working_dir: '/'
+    ports:
+      - '127.0.0.1:2322:2322'
+      - '127.0.0.1:2370:2370'
+      - '127.0.0.1:2380:2380'
+
+
+
+...

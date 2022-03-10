@@ -7,6 +7,7 @@ services:
 
   ${dd_tpl_bn}'':
     image: "mongo:5.0"
+    restart: 'no'
     volumes:
       - ${dd_dir}"@/mongo.data/v5:/data/db"
     ports:

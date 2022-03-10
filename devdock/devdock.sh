@@ -21,6 +21,11 @@ function devdock_up () {
   esac
   cd -- "$DD_DIR" || return $?
 
+  local DD_PROJ="$(devdock_detect_project_name)"
+  [ -n "$DD_PROJ" ] || DD_PROJ="devdock_p$$"
+  export COMPOSE_PROJECT_NAME="$DD_PROJ"
+  echo "D: project '$DD_PROJ' @ $DD_DIR"
+
   local TASK="$1"; shift
   local TASK_OPT=()
   case "$TASK" in
@@ -30,18 +35,6 @@ function devdock_up () {
   esac
 
   ps -C dockerd &>/dev/null || sudo service docker restart || return $?
-
-  local DD_PROJ="$DEVDOCK_PROJ"
-  if [ -z "$DD_PROJ" ]; then
-    DD_PROJ="$DD_DIR"
-    DD_PROJ="${DD_PROJ%[./_-]devdock}"
-    DD_PROJ="${DD_PROJ%[./_-]}"
-    DD_PROJ="$(basename -- "$DD_PROJ" | LANG=C grep -oPe '[A-Za-z0-9]+')"
-    DD_PROJ="${DD_PROJ//$'\n'/_}"
-  fi
-  [ -n "$DD_PROJ" ] || DD_PROJ="devdock_p$$"
-  export COMPOSE_PROJECT_NAME="$DD_PROJ"
-  echo "D: project '$DD_PROJ' @ $DD_DIR"
 
   case "$TASK" in
     up )
@@ -56,6 +49,19 @@ function devdock_up () {
   echo "D: docompose $TASK ${TASK_OPT[*]} $*"
   docompose "$TASK" "${TASK_OPT[@]}" "$@"
   return $?
+}
+
+
+function devdock_detect_project_name () {
+  local PN="$DEVDOCK_PROJ"
+  if [ -n "$PN" ]; then echo "$PN"; return $?; fi
+
+  PN="$DD_DIR"
+  PN="${PN%[./_-]devdock}"
+  PN="${PN%[./_-]}"
+  PN="$(basename -- "$PN" | LANG=C grep -oPe '[A-Za-z0-9]+')"
+  PN="${PN//$'\n'/_}"
+  if [ -n "$PN" ]; then echo "$PN"; return $?; fi
 }
 
 

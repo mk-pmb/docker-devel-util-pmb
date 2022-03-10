@@ -1,0 +1,24 @@
+%YAML 1.1
+# -*- coding: UTF-8, tab-width: 4 -*-
+---
+
+version: '3'
+services:
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0
+    environment:
+      - "discovery.type=single-node"
+    ports:
+      - "127.0.0.1:9200:9200"
+      - "127.0.0.1:9300:9300"
+
+  elastic_hq:
+    image: elastichq/elasticsearch-hq
+    ports:
+      - "127.0.0.1:9205:5000"
+
+
+
+
+...

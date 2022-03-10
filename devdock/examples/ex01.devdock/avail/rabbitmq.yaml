@@ -1,0 +1,42 @@
+%YAML 1.1
+# -*- coding: UTF-8, tab-width: 4 -*-
+---
+
+version: '3'
+services:
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    # https://hub.docker.com/_/rabbitmq/
+    hostname: hutch
+    volumes:
+      - ${dd_dir}"@/rabbitmq.data/v3:/var/lib/rabbitmq"
+      - ${dd_dir}"@/ssldebug-dummycert-pmb/ssldebug.pem:/ssldebug.pem:ro"
+    environment:
+      - ${env_secret}"RABBITMQ_ERLANG_COOKIE="
+      # - ${env_secret}"some_other_varname=RABBITMQ_ERLANG_COOKIE"
+
+      # ATTN: Setting SSL vars will disable the unencrypted version of the
+      #       management interface!
+      # - "RABBITMQ_SSL_CACERTFILE=/ssldebug.pem"
+      # - "RABBITMQ_SSL_CERTFILE=/ssldebug.pem"
+      # - "RABBITMQ_SSL_KEYFILE=/ssldebug.pem"
+      # - "RABBITMQ_SSL_FAIL_IF_NO_PEER_CERT=false"
+      # - "RABBITMQ_SSL_VERIFY=verify_peer"
+
+      # doesn't work anyway # - "RABBITMQ_DEFAULT_USER=bernd"
+      # doesn't work anyway # - "RABBITMQ_DEFAULT_PASS=CarrotBread"
+    ports:
+      # amqps://localhost:5671/
+      - "127.0.0.1:5671:5671"
+      # amqp://localhost:5672/
+      - "127.0.0.1:5672:5672"
+      # management plugin @ https://localhost:15671/
+      - "127.0.0.1:15671:15671"
+      # management plugin @ http://localhost:15672/
+      - "127.0.0.1:15672:15672"
+
+
+
+
+...

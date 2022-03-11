@@ -10,18 +10,18 @@ services:
     hostname: redisdb
     restart: always
     ports:
-      - "127.0.0.1:6379:6379"
+      - '127.0.0.1:6379:6379'
     volumes:
-      - ${dd_dir}"@/redis.data:/data"
+      - ${dd_dir}'@/redis.data:/data'
     command: ['redis-server', '--save', '--appendonly', 'yes']
 
   ${dd_tpl_bn}'_cmdr':
     image: rediscommander/redis-commander:latest
     restart: always
     environment:
-      - "REDIS_HOSTS=DevDock:redisdb:6379"
+      - 'REDIS_HOSTS=DevDock:redisdb:6379'
     ports:
-      - "127.0.0.1:6380:8081"
+      - '127.0.0.1:6380:8081'
         # => http://localhost:6380/
 
 

@@ -8,9 +8,11 @@ services:
   ${dd_tpl_bn}'':
     image: 'node:16'
 
-    command: sh -c 'date -R && exec sleep 9009009d'
+    command: sh -c 'date -R && sleep 9009009d'
     # ^-- To start an actual debug shell, run:
     #       docker exec --interactive --tty ex01_debug_shell_1 bash -i
+    # NB: No "exec" in command: "sleep" seems to ignore SIGTERM when it
+    #     runs as pid 1, which would slow down stopping of the container.
 
     restart: 'always'
     working_dir: '/'

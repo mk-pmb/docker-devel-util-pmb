@@ -6,6 +6,7 @@ function devdock_up () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
   local SELFFILE="$(readlink -m -- "$BASH_SOURCE")"
   local SELFPATH="$(dirname -- "$SELFFILE")"
+  local DBGLV="${DEBUGLEVEL:-0}"
 
   # Ensure the PATH variable is initialized properly:
   </dev/null source -- "$HOME"/.profile || return $?
@@ -32,7 +33,7 @@ function devdock_up () {
     '' ) TASK='up'; TASK_OPT=( --force-recreate );;
     bgup ) TASK='up'; TASK_OPT=( --force-recreate --detach );;
     recompose | \
-    terminalize ) devdock_"$TASK"; return $?;;
+    terminalize ) devdock_"$TASK" "$@"; return $?;;
   esac
 
   ps -C dockerd &>/dev/null || sudo service docker restart || return $?
@@ -67,19 +68,36 @@ function devdock_detect_project_name () {
 
 
 function devdock_terminalize () {
-  source -- "$HOME"/lib/wmutils-pmb/wmsess_util_pmb.sh --lib || return $?
-  local WSP='Video'
-  local TA_TITLE='DevDock'
-  local TA_GEOM='150x35'
-  local TA_ICON='other-driver'
-  local TA_CWD="$SELFPATH"
-  local SELF_CMD=(
+  local XT=(
+    xterm_with_custom_icon # from terminal-util-pmb
+    --title-and-class="DevDock $DD_PROJ"
+    )
+
+  local LIST=(
+    "$DD_DIR"/icon.{png,svg}
+    /usr/share/icons/Humanity/categories/48/applications-other.svg
+    /usr/share/icons/hicolor/scalable/apps/other-driver.svg
+    /usr/share/icons/Humanity/categories/48/applications-libraries.svg
+    )
+  local ICON=
+  for ICON in "${LIST[@]}"; do
+    [ -f "$ICON" ] || continue
+    XT+=( --icon-file="$ICON" )
+    break
+  done
+
+  XT+=(
+    -geometry '200x40-0+0'
+    -e
     env
-    DEVDOCK_DIR="$PWD"
+    DEVDOCK_DIR="$DD_DIR"
     "$SELFFILE"
     )
-  wmsess__ensure_terminal_app "$LT_TITLE" "$WSP" "${SELF_CMD[@]}"
-  return $?
+  [ "$DBGLV" -lt 2 ] || echo "D: $FUNCNAME: run:$(
+    printf -- ' ‹%s›' "${XT[@]}")" >&2
+  "${XT[@]}" "$@" &
+  disown $!
+  return 0
 }
 
 

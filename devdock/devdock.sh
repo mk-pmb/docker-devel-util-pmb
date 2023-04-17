@@ -124,12 +124,16 @@ function devdock_recompose () {
     "
   C_GEN="$(sed -re 's!^\s+!!' <<<"$C_GEN")"
 
+  local -A CFG=()
   local -A ENV_SECRETS=()
   local ITEM=
-  for ITEM in secrets/*.rc; do
+  for ITEM in {config,cfg@$HOSTNAME,secrets}/*.rc; do
+    [ -f "$ITEM" ] || continue
     devdock_source_in_func "$ITEM" || return $?$(
       echo "E: Failed to source $ITEM" >&2)
   done
+  [ "${#ENV_SECRETS[@]}" == 0 ] || return 4$(
+    echo "E: Your project uses the deprecated ENV_SECRETS feature." >&2)
 
   for ITEM in enabled/*.yaml; do
     ENAB_FILE="$ITEM" devdock_recompose__one_enab || return $?
@@ -137,7 +141,7 @@ function devdock_recompose () {
 
   C_GEN+=$'\n...'
 
-  local C_HAVE="$(cat -- "$C_DEST")"
+  local C_HAVE="$([ -f "$C_DEST" ] && cat -- "$C_DEST")"
   if [ "$C_GEN" == "$C_HAVE" ]; then
     echo "D: compose file already is up-to-date: $C_DEST"
     return 0
@@ -190,6 +194,10 @@ function devdock_recompose__one_enab () {
     echo "E: Unexpected '...' line in $ENAB_FILE" >&2
     return 4
   fi
+  if [[ "$YAML" == *'${#env_secret}'* ]]; then
+    echo "E: Your project uses the deprecated ENV_SECRETS feature." >&2
+    return 4
+  fi
 
   YAML="${YAML#$'\n'}"
   YAML="${YAML%$'\n'}"
@@ -202,9 +210,9 @@ function devdock_recompose__one_enab () {
   YAML="${YAML//$'\f<var dd_tpl_bn >'/${ENAB_BFN%.yaml}}"
 
   local KEY= VAL=
-  for KEY in "${!ENV_SECRETS[@]}"; do
-    VAL="${ENV_SECRETS[$KEY]}"
-    YAML="${YAML//$'\f<env_secret '"$KEY >"/$VAL}"
+  for KEY in "${!CFG[@]}"; do
+    VAL="${CFG[$KEY]}"
+    YAML="${YAML//$'\f<dd_cfg '"$KEY >"/$VAL}"
   done
 
   local MISS=()

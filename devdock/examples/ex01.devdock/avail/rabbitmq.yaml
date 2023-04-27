@@ -13,7 +13,7 @@ services:
       - ${dd_dir}'@/rabbitmq.data/v3:/var/lib/rabbitmq'
       - ${dd_dir}'@/ssldebug-dummycert-pmb/ssldebug.pem:/ssldebug.pem:ro'
     environment:
-      - ${env_secret}'RABBITMQ_ERLANG_COOKIE='
+      - ${dd_cfg}'RABBITMQ_ERLANG_COOKIE='
 
       # ATTN: Setting SSL vars will disable the unencrypted version of the
       #       management interface!

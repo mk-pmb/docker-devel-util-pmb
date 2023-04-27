@@ -13,7 +13,7 @@ services:
     environment:
       - 'PGDATA=/pgdata'
       # - 'POSTGRES_USER=postgres'
-      - ${env_secret}'POSTGRES_PASSWORD='
+      - ${dd_cfg}'POSTGRES_PASSWORD='
       # - 'POSTGRES_PASSWORD_FILE=/run/secrets/postgres/initpswd'
     ports:
       - '127.0.0.1:5432:5432'

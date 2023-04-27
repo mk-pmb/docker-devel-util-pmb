@@ -9,7 +9,8 @@ function devdock_up () {
   local DBGLV="${DEBUGLEVEL:-0}"
 
   # Ensure the PATH variable is initialized properly:
-  </dev/null source -- "$HOME"/.profile || return $?
+  [ ! -f "$HOME"/.profile ] \
+    || </dev/null source -- "$HOME"/.profile || return $?
 
   local COMPOSE_FILE='cache/composed.gen.yaml'
   export COMPOSE_FILE

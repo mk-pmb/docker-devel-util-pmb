@@ -25,6 +25,37 @@ See [`../README.md`](../README.md) for how.
 
 
 
+How to use
+----------
+
+### Project concepts
+
+* Every DevDock project has a name, which you can pick yourself,
+  as long as it starts with a letter and consist of only [Basic Latin
+  ](https://en.wikipedia.org/wiki/Basic_Latin_%28Unicode_block%29)
+  letters (`a-z`), digits (`0-9`), U+002D hyphen-minus (`-`) and
+  U+005F low line (`_`).
+  * In the container names, hyphen-minus may or may not be converted to
+    low line.
+* A DevDock project must reside in a directory whose name is the
+  project name followed by `.devdock`.
+* The project name will be used as a prefix for your docker container names.
+* Example projects can be found in the [examples/](examples/) directory.
+
+
+### Controlling the containers
+
+* start in background: `./dock.sh bgup`
+* start in foreground: `./dock.sh`
+  * ⚠ Running docker containers in foreground will captivate your terminal.
+    There is an un-captivate sequence hidden somewhere in the Docker docs,
+    but the easier way is to have another shell ready to stop the container.
+* clean shutdown: `./dock.sh down`
+
+
+
+
+
 
 Known issues
 ------------

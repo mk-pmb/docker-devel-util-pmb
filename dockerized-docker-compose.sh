@@ -17,6 +17,7 @@ function dockerized_docker_compose () {
     --env COMPOSE_PROJECT_NAME
     --rm
     --name "${COMPOSE_PROJECT_NAME}_compose_$$"
+    --workdir "$INSIDE_PREFIX"
     )
 
   doco_compofile || return $?

@@ -9,6 +9,8 @@ function dockerized_docker_compose () {
   [ -w "$SOK" ] || return 4$(
     echo "E: No write access to $SOK – is user '$USER' in group docker?" >&2)
   local INSIDE_PREFIX='/code'
+  [ -n "$COMPOSE_PROJECT_NAME" ] || local COMPOSE_PROJECT_NAME="$(
+    basename -- "$PWD")"
   local D_OPT=(
     --volume="$SOK:$SOK:rw"
     --volume="${PWD:-/proc/E/err_no_pwd}:$INSIDE_PREFIX:rw"
@@ -24,10 +26,10 @@ function dockerized_docker_compose () {
   D_OPT+=(
     docker/compose:latest
     )
-  [ "$DBGLV" -ge 2 ] && echo "D: docker run ${D_OPT[*]} $*" >&2
 
   local D_TASK=( "$1" ); shift
 
+  [ "$DBGLV" -lt 2 ] || echo "D: docker run ${D_OPT[*]} ${D_TASK[*]} $*" >&2
   docker run "${D_OPT[@]}" "${D_TASK[@]}" "$@" || return $?
 }
 

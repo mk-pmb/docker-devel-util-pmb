@@ -8,9 +8,18 @@ function dockerized_docker_compose () {
   local SOK='/var/run/docker.sock'
   [ -w "$SOK" ] || return 4$(
     echo "E: No write access to $SOK – is user '$USER' in group docker?" >&2)
+
+  local ITEM=
+  for ITEM in "$FUNCNAME".rc; do
+    [ -f "$ITEM" ] || continue
+    source -- "$ITEM" || return 4$(
+      echo "E: $FUNCNAME: Failed to source $ITEM" >&2)
+  done
+
   [ -n "$COMPOSE_PROJECT_NAME" ] || local COMPOSE_PROJECT_NAME="$(
     basename -- "$PWD")"
   local INSIDE_PREFIX="/code/$COMPOSE_PROJECT_NAME"
+
   local D_OPT=(
     --volume="$SOK:$SOK:rw"
     --volume="${PWD:-/proc/E/err_no_pwd}:$INSIDE_PREFIX:rw"

@@ -2,6 +2,9 @@
 # -*- coding: utf-8, tab-width: 2 -*-
 
 
+function do_in_func () { "$@"; }
+
+
 function dockerized_docker_compose () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
   local DBGLV="${DEBUGLEVEL:-0}"
@@ -15,7 +18,7 @@ function dockerized_docker_compose () {
   local ITEM=
   for ITEM in "$FUNCNAME".rc; do
     [ -f "$ITEM" ] || continue
-    source -- "$ITEM" || return 4$(
+    do_in_func source -- "$ITEM" --rc || return $?$(
       echo "E: $FUNCNAME: Failed to source $ITEM" >&2)
   done
 

@@ -18,54 +18,6 @@ function devdock_cli_preload () {
 }
 
 
-function devdock_cli_main () {
-  # Ensure the PATH variable is initialized properly:
-  [ ! -f "$HOME"/.profile ] \
-    || </dev/null source -- "$HOME"/.profile || return $?
-
-  local COMPOSE_FILE='cache/composed.gen.yaml'
-  export COMPOSE_FILE
-
-  # Now with profile loaded, find the DevDock dir:
-  local DD_DIR="$DEVDOCK_DIR"
-  case "$DD_DIR" in
-    '' ) DD_DIR="$HOME/.config/docker/devdock";;
-    '~' | '~/'* ) DD_DIR="$HOME${DD_DIR:1}";;
-  esac
-  cd -- "$DD_DIR" || return $?
-
-  local DD_PROJ="$(devdock_detect_project_name)"
-  [ -n "$DD_PROJ" ] || DD_PROJ="devdock_p$$"
-  export COMPOSE_PROJECT_NAME="$DD_PROJ"
-  echo "D: project '$DD_PROJ' @ $DD_DIR"
-
-  local TASK="$1"; shift
-  local TASK_OPT=()
-  case "$TASK" in
-    '' ) TASK='up'; TASK_OPT=( --force-recreate );;
-    bgup ) TASK='up'; TASK_OPT=( --force-recreate --detach );;
-    recompose | \
-    terminalize ) devdock_"$TASK" "$@"; return $?;;
-  esac
-
-  ps -C dockerd &>/dev/null || sudo service docker restart || return $?
-
-  case "$TASK" in
-    up )
-      if [ -f "$COMPOSE_FILE" ]; then
-        echo "D: before 'up', 'down' potential old container:"
-        docompose down || return $?
-      fi
-      devdock_recompose || return $?
-      ;;
-  esac
-
-  echo "D: docompose $TASK ${TASK_OPT[*]} $*"
-  docompose "$TASK" "${TASK_OPT[@]}" "$@"
-  return $?
-}
-
-
 function devdock_terminalize () {
   local XT=(
     xterm_with_custom_icon # from terminal-util-pmb

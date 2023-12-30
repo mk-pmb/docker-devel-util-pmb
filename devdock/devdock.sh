@@ -5,12 +5,16 @@
 function devdock_source_in_func () { source -- "$@"; }
 
 
-function devdock_up () {
+function devdock_cli_preload () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
   local DD_PROGABS="$(readlink -m -- "$BASH_SOURCE")"
   local DD_PROGDIR="$(dirname -- "$DD_PROGABS")"
   local DBGLV="${DEBUGLEVEL:-0}"
+  devdock_cli_main "$@"; return $?
+}
 
+
+function devdock_cli_main () {
   # Ensure the PATH variable is initialized properly:
   [ ! -f "$HOME"/.profile ] \
     || </dev/null source -- "$HOME"/.profile || return $?
@@ -238,4 +242,4 @@ function devdock_recompose__one_enab () {
 
 
 
-devdock_up "$@"; exit $?
+devdock_cli_preload "$@"; exit $?

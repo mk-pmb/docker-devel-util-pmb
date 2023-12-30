@@ -10,6 +10,10 @@ function devdock_cli_preload () {
   local DD_PROGABS="$(readlink -m -- "$BASH_SOURCE")"
   local DD_PROGDIR="$(dirname -- "$DD_PROGABS")"
   local DBGLV="${DEBUGLEVEL:-0}"
+  local ITEM=
+  for ITEM in "$DD_PROGDIR"/*.funcs/*.sh; do
+    devdock_source_in_func "$ITEM" --lib || return $?
+  done
   devdock_cli_main "$@"; return $?
 }
 
@@ -59,19 +63,6 @@ function devdock_cli_main () {
   echo "D: docompose $TASK ${TASK_OPT[*]} $*"
   docompose "$TASK" "${TASK_OPT[@]}" "$@"
   return $?
-}
-
-
-function devdock_detect_project_name () {
-  local PN="$DEVDOCK_PROJ"
-  if [ -n "$PN" ]; then echo "$PN"; return $?; fi
-
-  PN="$DD_DIR"
-  PN="${PN%[./_-]devdock}"
-  PN="${PN%[./_-]}"
-  PN="$(basename -- "$PN" | LANG=C grep -oPe '[A-Za-z0-9]+')"
-  PN="${PN//$'\n'/_}"
-  if [ -n "$PN" ]; then echo "$PN"; return $?; fi
 }
 
 

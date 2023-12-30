@@ -5,9 +5,12 @@
 function dockerized_docker_compose () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
   local DBGLV="${DEBUGLEVEL:-0}"
+  local APP_NAME="${FUNCNAME//_/-}"
   local SOK='/var/run/docker.sock'
   [ -w "$SOK" ] || return 4$(
     echo "E: No write access to $SOK – is user '$USER' in group docker?" >&2)
+  local ENV_OPTNAME='--env'
+  local D_TASK=( "$1" ); shift
 
   local ITEM=
   for ITEM in "$FUNCNAME".rc; do
@@ -15,6 +18,13 @@ function dockerized_docker_compose () {
     source -- "$ITEM" || return 4$(
       echo "E: $FUNCNAME: Failed to source $ITEM" >&2)
   done
+
+  case "${D_TASK[0]}" in
+    build )
+      # ENV_OPTNAME='--build-arg'
+      # ^-- nope, docker-compose doesn't support this
+      ENV_OPTNAME=;;
+  esac
 
   [ -n "$COMPOSE_PROJECT_NAME" ] || local COMPOSE_PROJECT_NAME="$(
     basename -- "$PWD")"
@@ -37,8 +47,6 @@ function dockerized_docker_compose () {
     docker/compose:latest
     )
 
-  local D_TASK=( "$1" ); shift
-
   [ "$DBGLV" -lt 2 ] || echo "D: docker run ${D_OPT[*]} ${D_TASK[*]} $*" >&2
   docker run "${D_OPT[@]}" "${D_TASK[@]}" "$@" || return $?
 }
@@ -55,19 +63,17 @@ function doco_compofile () {
 
 
 function doco_proxy () {
-  # DoCo wants the proxy variables in uppercase
   local KEY= VAL=
   for KEY in http{s,}_proxy; do
     VAL=
     eval 'VAL="$'"$KEY"'"'
-    D_OPT+=( --env "${KEY^^}=$VAL" )
+    [ -n "$VAL" ] || continue
+    [ -n "$ENV_OPTNAME" ] || continue$(echo "W: $APP_NAME:" >&2 \
+      "Env var $KEY is set but is not yet supported for this task!")
+    D_OPT+=( $ENV_OPTNAME "$KEY=$VAL" )
+    D_OPT+=( $ENV_OPTNAME "${KEY^^}=$VAL" )
+    # ^-- DoCo wants the proxy variables in uppercase
   done
-}
-
-
-function doco_proxy_via_build_arg () {
-  echo "E: stub!" >&2
-  return 8
 }
 
 

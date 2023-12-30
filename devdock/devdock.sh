@@ -7,8 +7,8 @@ function devdock_source_in_func () { source -- "$@"; }
 
 function devdock_up () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
-  local SELFFILE="$(readlink -m -- "$BASH_SOURCE")"
-  local SELFPATH="$(dirname -- "$SELFFILE")"
+  local DD_PROGABS="$(readlink -m -- "$BASH_SOURCE")"
+  local DD_PROGDIR="$(dirname -- "$DD_PROGABS")"
   local DBGLV="${DEBUGLEVEL:-0}"
 
   # Ensure the PATH variable is initialized properly:
@@ -95,7 +95,7 @@ function devdock_terminalize () {
     -e
     env
     DEVDOCK_DIR="$DD_DIR"
-    "$SELFFILE"
+    "$DD_PROGABS"
     )
   [ "$DBGLV" -lt 2 ] || echo "D: $FUNCNAME: run:$(
     printf -- ' ‹%s›' "${XT[@]}")" >&2
@@ -172,7 +172,7 @@ function devdock_recompose__one_enab () {
   YAML="${YAML:${#HEAD}}"
   YAML="${YAML:${#NECK}}"
 
-  HEAD="$(<<<"$HEAD" "$SELFPATH"/src/denoise_yaml_header.sed)"
+  HEAD="$(<<<"$HEAD" "$DD_PROGDIR"/src/denoise_yaml_header.sed)"
 
   case "$HEAD" in
     'version:3' ) ;;
@@ -202,7 +202,7 @@ function devdock_recompose__one_enab () {
 
   YAML="${YAML#$'\n'}"
   YAML="${YAML%$'\n'}"
-  YAML="$(<<<"$YAML" "$SELFPATH"/src/highlight_slots.sed)"
+  YAML="$(<<<"$YAML" "$DD_PROGDIR"/src/highlight_slots.sed)"
 
   local ENAB_BFN="$(basename -- "$ENAB_FILE")"
   YAML="${YAML//$'\f<var dd_dir >'/$DD_DIR/}"

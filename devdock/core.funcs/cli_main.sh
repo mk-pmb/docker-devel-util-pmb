@@ -30,6 +30,7 @@ function devdock_cli_main () {
     bgup ) TASK='up'; TASK_OPT=( --force-recreate --detach );;
     recompose | \
     terminalize ) devdock_"$TASK" "$@"; return $?;;
+    dddebug ) "$@"; return $?;;
   esac
 
   ps -C dockerd &>/dev/null || sudo service docker restart || return $?

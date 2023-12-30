@@ -2,46 +2,20 @@
 # -*- coding: utf-8, tab-width: 2 -*-
 
 
-function devdock_recompose__one_enab () {
-  local YAML="$(cat -- "$ENAB_FILE")"
-  local NECK=$'\nservices:\n'
-  local HEAD="${YAML%%$NECK*}"
-  [ "$HEAD" != "$YAML" ] || return 4$(
-    echo "E: Cannot find 'services:' line in $ENAB_FILE" >&2)
-  YAML="${YAML:${#HEAD}}"
-  YAML="${YAML:${#NECK}}"
+function devdock_recompose__one_enab_file () {
+  local ENAB_FILE="$1"
+  local LNUM=0 CONTENT_START_LNUM= YAML=
+  devdock_recompose__unwrap_doco_yaml < <(sed -rf <(echo '
+    1s~^%YAML .*$~~
+    s~\s+$~~
+    ') -- "$ENAB_FILE") || return $?$(
+    echo "E: There was an error in line $LNUM of template $ENAB_FILE" >&2)
 
-  HEAD="$(<<<"$HEAD" "$DD_PROGDIR"/src/denoise_yaml_header.sed)"
-
-  case "$HEAD" in
-    'version:3' ) ;;
-
-    '' )
-      echo "E: Template $ENAB_FILE" \
-        "must declare at least the docker-compose version used," \
-        "which must be exactly $DOCO_VER." >&2
-      return 7;;
-
-    * )
-      echo "E: Unsupported header line(s) in $ENAB_FILE:" \
-        "'${HEAD//$'\n'/¶ }'" >&2
-      return 7;;
-  esac
-
-  YAML="${YAML%$'\n'}"
-  YAML="${YAML%$'\n...'}"
-  if [[ "$YAML"$'\n' == *$'\n...\n'* ]]; then
-    echo "E: Unexpected '...' line in $ENAB_FILE" >&2
-    return 4
-  fi
-  if [[ "$YAML" == *'${#env_secret}'* ]]; then
-    echo "E: Your project uses the deprecated ENV_SECRETS feature." >&2
-    return 4
-  fi
-
-  YAML="${YAML#$'\n'}"
-  YAML="${YAML%$'\n'}"
+  [ -n "$YAML" ] || return 7$(
+    echo "E: Found no content section in template $ENAB_FILE" >&2)
   YAML="$(<<<"$YAML" "$DD_PROGDIR"/src/highlight_slots.sed)"
+  [ -n "$YAML" ] || return 7$(
+    echo "E: Failed to highlight variable slots in template $ENAB_FILE" >&2)
 
   local ENAB_BFN="$(basename -- "$ENAB_FILE")"
   YAML="${YAML//$'\f<var dd_dir >'/$DD_DIR/}"
@@ -54,17 +28,17 @@ function devdock_recompose__one_enab () {
     VAL="${CFG[$KEY]}"
     YAML="${YAML//$'\f<dd_cfg '"$KEY >"/$VAL}"
   done
+  KEY= VAL= # forget potential secrets
 
   local MISS=()
   readarray -t MISS < <(grep -oPe '\f<[^<>]+>' <<<"$YAML" \
     | cut --bytes=2- | LANG=C sort --unique)
   [ "${#MISS[@]}" == 0 ] || return 4$(
-    echo "E: Unsolved slots in $ENAB_FILE: ${MISS[*]}" >&2)
+    echo "E: Unsolved slots in template $ENAB_FILE: ${MISS[*]}" >&2)
 
-  C_GEN+=$'\n\n'
-  C_GEN+="# >>> services from $ENAB_FILE >>>"$'\n'
-  C_GEN+="$YAML"$'\n'
-  C_GEN+="# <<< services from $ENAB_FILE <<<"$'\n'
+  LNUM="$CONTENT_START_LNUM"
+  devdock_recompose__split_doco_sections <<<"$YAML" || return $?$(
+    echo "E: There was an error in line $LNUM of template $ENAB_FILE" >&2)
 }
 
 

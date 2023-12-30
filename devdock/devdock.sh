@@ -2,6 +2,9 @@
 # -*- coding: utf-8, tab-width: 2 -*-
 
 
+function devdock_source_in_func () { source -- "$@"; }
+
+
 function devdock_up () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
   local SELFFILE="$(readlink -m -- "$BASH_SOURCE")"
@@ -100,9 +103,6 @@ function devdock_terminalize () {
   disown $!
   return 0
 }
-
-
-function devdock_source_in_func () { source -- "$@"; }
 
 
 function devdock_recompose () {

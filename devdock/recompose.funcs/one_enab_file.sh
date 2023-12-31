@@ -13,6 +13,16 @@ function devdock_recompose__one_enab_file () {
 
   [ -n "$YAML" ] || return 7$(
     echo "E: Found no content section in template $ENAB_FILE" >&2)
+
+  local SED_SCAN='^\s*#%sed\s+'
+  local SED_MORPH="$( <<<"$YAML" LANG=C sed -nre "s:$SED_SCAN::p" )"
+  [ -z "$SED_MORPH" ] || YAML="$(LANG=C sed -re "s:($SED_SCAN).*$:\1…:" \
+    -- <(echo "$YAML") | LANG=C sed -rf <(echo "$SED_MORPH") )"
+  [ -n "$YAML" ] || return 9$(
+    echo "E: Content of template $ENAB_FILE" \
+      'did not survive its self-morphing sed script which was:' >&2
+    nl -ba <<<"$SED_MORPH" >&2)
+
   YAML="$(<<<"$YAML" "$DD_PROGDIR"/src/highlight_slots.sed)"
   [ -n "$YAML" ] || return 7$(
     echo "E: Failed to highlight variable slots in template $ENAB_FILE" >&2)

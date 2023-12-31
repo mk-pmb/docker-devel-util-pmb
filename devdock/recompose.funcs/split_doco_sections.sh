@@ -8,17 +8,22 @@ function devdock_recompose__split_doco_sections () {
 
   local -A SECT_TEXTS=()
   local CUR_SECT= SECT_HAD=
-  local YAML_COMMENT_RGX='^[ ]*#( |$)'
+  local INDENT_RGX='^[ \t]*' INDENT= UNINDENTED=
   local BUF=
   while IFS= read -r BUF; do
     (( LNUM += 1 ))
 
-    if [ -z "$BUF" ] || [[ "$BUF" =~ $YAML_COMMENT_RGX ]]; then
-      [ -z "$CUR_SECT" ] \
-        || [ -z "${SECT_TEXTS["$CUR_SECT"]}" ] \
-        || SECT_TEXTS["$CUR_SECT"]+="$BUF"$'\n'
-      continue
-    fi
+    INDENT=
+    [[ "$BUF" =~ $INDENT_RGX ]] && INDENT="${BASH_REMATCH[0]}"
+    UNINDENTED="${BUF:${#INDENT}}"
+
+    case "$UNINDENTED" in
+      '' | '#' | '# '* )
+        [ -n "$CUR_SECT" ] || continue
+        [ -n "${SECT_TEXTS["$CUR_SECT"]}" ] || continue
+        SECT_TEXTS["$CUR_SECT"]+="$BUF"$'\n'
+        continue;;
+    esac
 
     case "$BUF" in
       [a-z]*: )
@@ -48,13 +53,17 @@ function devdock_recompose__split_doco_sections () {
 
   [ -n "$CUR_SECT" ] || return 7$(echo 'E: Found no top-level sections' >&2)
 
+  local LINT=
   for CUR_SECT in $SECT_HAD ; do
     BUF="${SECT_TEXTS["$CUR_SECT"]}"
     while [[ "$BUF" == $'\n'* ]]; do BUF="${BUF#$'\n'}"; done
     while [[ "$BUF" == *$'\n' ]]; do BUF="${BUF%$'\n'}"; done
-    [[ "$BUF" == *['A-Za-z:#']* ]] || return 7$(
-      echo "E: Section '$CUR_SECT' from template $ENAB_FILE" \
-        "seems to not have actual content, not even comments." >&2)
+
+    LINT="$(devdock_lint_sect "$CUR_SECT" <<<"$BUF")"
+    [ -z "$LINT" ] || return 5$(
+      echo "E: Found lint in section '$CUR_SECT' from $ENAB_FILE:" >&2
+      echo "$LINT" >&2)
+
     BUF="  # >>> $CUR_SECT from $ENAB_FILE >>>"$'\n'"$BUF"$'\n'
     BUF+="  # <<< $CUR_SECT from $ENAB_FILE <<<"$'\n\n'
     DOCO_SECTIONS["$CUR_SECT"]+="$BUF"

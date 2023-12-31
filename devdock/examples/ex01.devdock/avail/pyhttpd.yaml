@@ -5,11 +5,11 @@
 version: '3'
 services:
 
-  ${dd_tpl_bn}'':
+  ${DD:tpl_bn}'':
     image: 'python:3-alpine'
     restart: 'no'
     volumes:
-      - ${dd_dir}'@/wwwpub:/var/www/pub'
+      - ${DD:dir}'@/wwwpub:/var/www/pub'
     command: 'python3 -m http.server --directory . 8080'
     working_dir: '/var/www/pub'
     ports:

@@ -5,15 +5,15 @@
 version: '3'
 services:
 
-  ${dd_tpl_bn}'':
+  ${DD:tpl_bn}'':
     image: 'rabbitmq:3-management'
     # https://hub.docker.com/_/rabbitmq/
     hostname: rabbitmqdb
     volumes:
-      - ${dd_dir}'@/rabbitmq.data/v3:/var/lib/rabbitmq'
-      - ${dd_dir}'@/ssldebug-dummycert-pmb/ssldebug.pem:/ssldebug.pem:ro'
+      - ${DD:dir}'@/rabbitmq.data/v3:/var/lib/rabbitmq'
+      - ${DD:dir}'@/ssldebug-dummycert-pmb/ssldebug.pem:/ssldebug.pem:ro'
     environment:
-      - ${dd_cfg}'RABBITMQ_ERLANG_COOKIE='
+      - ${DD:cfg:}'RABBITMQ_ERLANG_COOKIE='
 
       # ATTN: Setting SSL vars will disable the unencrypted version of the
       #       management interface!

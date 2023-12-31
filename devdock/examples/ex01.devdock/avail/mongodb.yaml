@@ -5,11 +5,11 @@
 version: '3'
 services:
 
-  ${dd_tpl_bn}'':
+  ${DD:tpl_bn}'':
     image: 'mongo:5.0'
     restart: 'no'
     volumes:
-      - ${dd_dir}'@/mongo.data/v5:/data/db'
+      - ${DD:dir}'@/mongo.data/v5:/data/db'
     ports:
       - '127.0.0.1:27017:27017'
 

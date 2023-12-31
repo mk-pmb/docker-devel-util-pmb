@@ -5,17 +5,17 @@
 version: '3'
 services:
 
-  ${dd_tpl_bn}'_db':
+  ${DD:tpl_bn}'_db':
     image: redis:alpine
     hostname: redisdb
     restart: always
     ports:
       - '127.0.0.1:6379:6379'
     volumes:
-      - ${dd_dir}'@/redis.data:/data'
+      - ${DD:dir}'@/redis.data:/data'
     command: ['redis-server', '--save', '--appendonly', 'yes']
 
-  ${dd_tpl_bn}'_cmdr':
+  ${DD:tpl_bn}'_cmdr':
     image: rediscommander/redis-commander:latest
     restart: always
     environment:

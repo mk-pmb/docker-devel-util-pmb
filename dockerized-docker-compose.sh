@@ -45,7 +45,7 @@ function dockerized_docker_compose () {
   doco_compofile || return $?
   doco_proxy || return $?
 
-  [ "$#" != 0 ] || D_OPT+=( --interactive --tty )
+  tty --silent && D_OPT+=( --interactive --tty )
   D_OPT+=(
     docker/compose:latest
     )

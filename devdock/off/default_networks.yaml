@@ -1,0 +1,27 @@
+%YAML 1.2
+# -*- coding: UTF-8, tab-width: 4 -*-
+---
+
+version: '3'
+
+networks:
+  default:
+    driver: bridge
+
+    driver_opts:
+        # https://docs.docker.com/engine/reference/commandline/network_create/
+        com.docker.network.bridge.name: 'br-devdock-${DD:proj:slug}'
+
+    # Unfortunately, detailed IP config seems to not be supported in v3 yet:
+    # https://github.com/docker/compose/issues/3962
+    # ipam:
+    #    config:
+    #      - subnet:     172.42.0.0/24
+    #        ip_range:   172.42.23.0/24
+    #        gateway:    172.42.23.255
+    #        aux_addreses:
+    #            db: 172.42.23.8
+
+
+...
+

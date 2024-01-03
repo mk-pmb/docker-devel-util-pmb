@@ -12,7 +12,6 @@ function dockerized_docker_compose () {
   local SOK='/var/run/docker.sock'
   [ -w "$SOK" ] || return 4$(
     echo "E: No write access to $SOK – is user '$USER' in group docker?" >&2)
-  local ENV_OPTNAME='--env'
   local D_TASK="$1"; shift
   local D_EARLY_OPT=()
   local STERN_WARNINGS=
@@ -26,19 +25,13 @@ function dockerized_docker_compose () {
     [inside_prefix]="$COMPOSE_INSIDE_PREFIX"
     [project_name]="$COMPOSE_PROJECT_NAME"
     )
+  doco_advise_on_compose_file_version || return $?
   local ITEM=
   for ITEM in "$FUNCNAME".rc; do
     [ -f "$ITEM" ] || continue
     do_in_func source -- "$ITEM" --rc || return $?$(
       echo "E: $FUNCNAME: Failed to source $ITEM" >&2)
   done
-
-  case "$D_TASK" in
-    build )
-      # ENV_OPTNAME='--build-arg'
-      # ^-- nope, docker-compose doesn't support this
-      ENV_OPTNAME=;;
-  esac
 
   [ -n "${CFG[project_name]}" ] || CFG[project_name]="$(basename -- "$PWD")"
   [ -n "${CFG[inside_prefix]}" ] \
@@ -116,6 +109,39 @@ function doco_proxy () {
     D_OPT+=( $ENV_OPTNAME "${KEY^^}=$VAL" )
     # ^-- DoCo wants the proxy variables in uppercase
   done
+}
+
+
+function doco_advise_on_compose_file_version () {
+  local CF_VER="$(sed -nre 's~^version:~~p' -- "$COMPOSE_FILE")"
+  CF_VER="${CF_VER//[$'\x22\x27 \t']/}"
+  local ERR=
+  case "$CF_VER" in
+    '' ) ERR='none';;
+    *$'\n'* ) ERR='too many';;
+  esac
+  [ -z "$ERR" ] || return 5$( echo "E: $APP_NAME:" >&2 \
+    "Unable to detect compose file format version: Found $ERR.")
+
+  case "$CF_VER" in
+    1 | 1.* | 2 | 2.0 ) ERR='%dc and %ba';;
+    2.1 ) ERR='%ba';;
+    2.* ) CFG[can_use_global_build_arg]=+;;
+    3 | 3.0 | 3.[1-8] ) CFG[can_use_global_build_arg]=+; ERR='%dc';;
+    * )
+      echo "E: $APP_NAME:" >&2 \
+        "Your compose file format version was detected as '$CF_VER'" \
+        'which seems incompatible with `docker-compose`.' \
+        "You should probably use docker's internal compose command" \
+        '(`docker compose` without hyphen) instead.'
+      return 5;;
+  esac
+  ERR="${ERR//%dc/dependency conditions}"
+  ERR="${ERR//%ba/global --build-arg}"
+  [ -z "$ERR" ] || sternly_warn \
+    "Your compose file format version was detected as '$CF_VER'" \
+    "which lacks $ERR" '(see `compose_file_versions.md`).' \
+    'You may want to consider using version 2.2 or 3.9.'
 }
 
 

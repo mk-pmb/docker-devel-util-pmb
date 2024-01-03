@@ -64,6 +64,13 @@ function dockerized_docker_compose () {
     docker/compose:latest
     )
 
+  doco_fallible_actually_do_stuff; local D_RV=$?
+
+  return "$D_RV"
+}
+
+
+function doco_fallible_actually_do_stuff () {
   local D_CMD=(
     "${OUTER_RUN[@]}"
     "$D_TASK"
@@ -71,9 +78,7 @@ function dockerized_docker_compose () {
     "$@"
     )
   [ "$DBGLV" -lt 2 ] || echo "D: ${D_CMD[*]}" >&2
-  "${D_CMD[@]}"; local D_RV=$?
-
-  return "$D_RV"
+  "${D_CMD[@]}" || return $?
 }
 
 

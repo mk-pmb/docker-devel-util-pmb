@@ -15,6 +15,7 @@ function dockerized_docker_compose () {
   local ENV_OPTNAME='--env'
   local D_TASK="$1"; shift
   local D_EARLY_OPT=()
+  local STERN_WARNINGS=
 
   local COMPOSE_FILE="$COMPOSE_FILE"
   [ -n "$COMPOSE_FILE" ] || for COMPOSE_FILE in docker-compose.y{a,}ml ''; do
@@ -66,7 +67,18 @@ function dockerized_docker_compose () {
 
   doco_fallible_actually_do_stuff; local D_RV=$?
 
+  [ -z "$STERN_WARNINGS" ] || echo "W: $APP_NAME:" \
+    "In case there was a lot of output above," \
+    "you may have missed these earlier warnings:" \
+    "${STERN_WARNINGS//$'\n'/$'\n  • '}" >&2
+
   return "$D_RV"
+}
+
+
+function sternly_warn () {
+  STERN_WARNINGS+=$'\n'"$*"
+  echo "W: $APP_NAME: $*" >&2
 }
 
 

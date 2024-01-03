@@ -42,7 +42,14 @@ function dockerized_docker_compose () {
 
   case "$D_TASK" in
     build | \
+    rebuild | \
+    rebup | \
     up ) CFG[pre-task:down]="$D_TASK";;
+  esac
+
+  case "$D_TASK" in
+    rebuild ) CFG[pre-task:rebuild]=+; D_TASK='SKIP';;
+    rebup )   CFG[pre-task:rebuild]=+; D_TASK='up';;
   esac
 
   local OUTER_RUN=(
@@ -85,6 +92,16 @@ function doco_fallible_actually_do_stuff () {
     printf -- 'D: %s: Auto-"down" before "%s":\n' \
       "$APP_NAME" "${CFG[pre-task:down]}"
     "${OUTER_RUN[@]}" down || return $?
+  fi
+
+  if [ -n "${CFG[pre-task:rebuild]}" ]; then
+    echo "D: $APP_NAME: Rebuilding project."
+    "${OUTER_RUN[@]}" build --no-cache --force-rm || return $?
+  fi
+
+  if [ "$D_TASK" == SKIP ]; then
+    [ "$DBGLV" -lt 6 ] || echo 'D: Skipping D_TASK as requested.' >&2
+    return 0
   fi
 
   local D_CMD=(

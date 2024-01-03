@@ -56,9 +56,15 @@ function dockerized_docker_compose () {
   esac
 
   case "$D_TASK" in
+    lint-config )
+      D_TASK='config'
+      COMPOSE_FILE="${1:-$COMPOSE_FILE}"; shift
+      ;;
+
     build )
       doco_build_maybe_add_proxy_build_args || return $?
       ;;
+
     run )
       D_EARLY_OPT+=( "${PROXY_OPT[@]}" )
       ;;

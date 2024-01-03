@@ -26,6 +26,9 @@ function dockerized_docker_compose () {
     [project_name]="$COMPOSE_PROJECT_NAME"
     )
   doco_advise_on_compose_file_version || return $?
+  local PROXY_OPT=()
+  doco_gen_proxy_opt || return $?
+
   local ITEM=
   for ITEM in "$FUNCNAME".rc; do
     [ -f "$ITEM" ] || continue
@@ -52,20 +55,28 @@ function dockerized_docker_compose () {
     rebup )   CFG[pre-task:rebuild]=+; D_TASK='up';;
   esac
 
+  case "$D_TASK" in
+    build )
+      doco_build_maybe_add_proxy_build_args || return $?
+      ;;
+    run )
+      D_EARLY_OPT+=( "${PROXY_OPT[@]}" )
+      ;;
+  esac
+
   local OUTER_RUN=(
     docker
     run
     --volume="$SOK:$SOK:rw"
     --volume="${PWD:-/proc/E/err_no_pwd}:${CFG[inside_prefix]}:rw"
     --env COMPOSE_PROJECT_NAME="${CFG[project_name]}"
+    "${PROXY_OPT[@]}"
     "${TTY_OPT[@]}"
     --rm
     --name "${CFG[project_name]}_compose_$$"
     --workdir "${CFG[inside_prefix]}"
     )
   doco_cfg_compo_file__insert_inside_prefix || return $?
-  doco_proxy || return $?
-
   OUTER_RUN+=(
     docker/compose:latest
     )
@@ -125,16 +136,21 @@ function doco_cfg_compo_file__insert_inside_prefix () {
 }
 
 
-function doco_proxy () {
+function doco_gen_proxy_opt () {
+  PROXY_OPT=() # <- in case one of the rc files wants to re-render them
   local KEY= VAL=
   for KEY in http{s,}_proxy; do
     VAL=
     eval 'VAL="$'"$KEY"'"'
-    [ -n "$VAL" ] || continue
-    [ -n "$ENV_OPTNAME" ] || continue$(echo "W: $APP_NAME:" >&2 \
-      "Env var $KEY is set but is not yet supported for this task!")
-    D_OPT+=( $ENV_OPTNAME "$KEY=$VAL" )
-    D_OPT+=( $ENV_OPTNAME "${KEY^^}=$VAL" )
+    case "$VAL" in
+      '' ) continue;;
+      [a-z]*://* ) ;;
+      * )
+        echo "E: $APP_NAME: Unsupported proxy syntax in $KEY: '$VAL'" >&2
+        return 8;;
+    esac
+    PROXY_OPT+=( --env "$KEY=$VAL" )
+    PROXY_OPT+=( --env "${KEY^^}=$VAL" )
     # ^-- DoCo wants the proxy variables in uppercase
   done
 }
@@ -170,6 +186,24 @@ function doco_advise_on_compose_file_version () {
     "Your compose file format version was detected as '$CF_VER'" \
     "which lacks $ERR" '(see `compose_file_versions.md`).' \
     'You may want to consider using version 2.2 or 3.9.'
+}
+
+
+function doco_build_maybe_add_proxy_build_args () {
+  [ -n "${PROXY_OPT[0]}" ] || return 0
+  [ -n "${CFG[can_use_global_build_arg]}" ] || return 0$(
+    echo "W: $APP_NAME:" >&2 \
+      'Flinching from adding proxy settings as --build-arg options!')
+  D_EARLY_OPT+=( "${PROXY_OPT[@]/#--env/--build-arg}" )
+  local WARN= ITEM=
+  for ITEM in "${PROXY_OPT[@]}"; do case "$ITEM" in
+    --* ) ;;
+    *=* ) ITEM="${ITEM%%=*}"; [ -z "$ITEM" ] || WARN+="$ITEM=…, ";;
+  esac; done
+  [ -n "$WARN" ] || return 4$(echo "E: $FUNCNAME: Empty proxy options?" \
+    "This has to be a bug, probably about control flow failure." >&2)
+  sternly_warn "Passing proxy settings (${WARN%, }) via --build-arg." \
+    'Anyone with access to the built image will be able to see them.'
 }
 
 

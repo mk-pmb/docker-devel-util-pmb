@@ -1,5 +1,5 @@
 FROM alpine:latest
 WORKDIR /
-COPY ./envdump.sh .
+COPY ./*.sh ./
 RUN ./envdump.sh build
 CMD [ "/envdump.sh", "default" ]

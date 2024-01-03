@@ -15,7 +15,10 @@ services:
       - https_proxy
     command: '/envdump.sh main'
     depends_on:
-      - app_init
+      app_init:
+        condition: service_healthy
+        # ^-- b/c compose file format v2.2. doesn't yet support
+        #     service_completed_successfully
 
   app_init:
     build:
@@ -26,7 +29,12 @@ services:
       - HTTPS_PROXY
       - |
           EVAL_AFTER=
-          echo init done.
+          /slow_init.sh
     command: '/envdump.sh init'
+    healthcheck:
+      test: ['CMD', 'test', '-f', '/tmp/healthy']
+      interval: 1s
+      timeout: 1m
+      retries: 9002
 
 ...

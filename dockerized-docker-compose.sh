@@ -27,9 +27,6 @@ function dockerized_docker_compose () {
   [ "$DBGLV" -ge 2 ] && echo "D: docker run ${D_OPT[*]} $*" >&2
 
   local D_TASK=( "$1" ); shift
-  case "${D_TASK[0]}" in
-    build ) ;;
-  esac
 
   docker run "${D_OPT[@]}" "${D_TASK[@]}" "$@" || return $?
 }

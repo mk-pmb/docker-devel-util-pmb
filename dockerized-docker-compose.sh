@@ -40,6 +40,11 @@ function dockerized_docker_compose () {
   local TTY_OPT=()
   tty --silent && TTY_OPT+=( --interactive --tty )
 
+  case "$D_TASK" in
+    build | \
+    up ) CFG[pre-task:down]="$D_TASK";;
+  esac
+
   local OUTER_RUN=(
     docker
     run
@@ -76,6 +81,12 @@ function sternly_warn () {
 
 
 function doco_fallible_actually_do_stuff () {
+  if [ -n "${CFG[pre-task:down]}" ]; then
+    printf -- 'D: %s: Auto-"down" before "%s":\n' \
+      "$APP_NAME" "${CFG[pre-task:down]}"
+    "${OUTER_RUN[@]}" down || return $?
+  fi
+
   local D_CMD=(
     "${OUTER_RUN[@]}"
     "$D_TASK"

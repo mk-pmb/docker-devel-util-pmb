@@ -20,6 +20,10 @@ function dockerized_docker_compose () {
     [ -f "$COMPOSE_FILE" ] && break
   done
 
+  local -A CFG=(
+    [inside_prefix]="$COMPOSE_INSIDE_PREFIX"
+    [project_name]="$COMPOSE_PROJECT_NAME"
+    )
   local ITEM=
   for ITEM in "$FUNCNAME".rc; do
     [ -f "$ITEM" ] || continue
@@ -34,20 +38,19 @@ function dockerized_docker_compose () {
       ENV_OPTNAME=;;
   esac
 
-  [ -n "$COMPOSE_PROJECT_NAME" ] || local COMPOSE_PROJECT_NAME="$(
-    basename -- "$PWD")"
-  local INSIDE_PREFIX="/code/$COMPOSE_PROJECT_NAME"
+  [ -n "${CFG[project_name]}" ] || CFG[project_name]="$(basename -- "$PWD")"
+  [ -n "${CFG[inside_prefix]}" ] \
+    || CFG[inside_prefix]="/code/${CFG[project_name]}"
 
   local D_OPT=(
     --volume="$SOK:$SOK:rw"
-    --volume="${PWD:-/proc/E/err_no_pwd}:$INSIDE_PREFIX:rw"
-    --env COMPOSE_PROJECT_NAME
+    --volume="${PWD:-/proc/E/err_no_pwd}:${CFG[inside_prefix]}:rw"
+    --env COMPOSE_PROJECT_NAME="${CFG[project_name]}"
     --rm
-    --name "${COMPOSE_PROJECT_NAME}_compose_$$"
-    --workdir "$INSIDE_PREFIX"
+    --name "${CFG[project_name]}_compose_$$"
+    --workdir "${CFG[inside_prefix]}"
     )
-
-  doco_compofile || return $?
+  doco_cfg_compo_file__insert_inside_prefix || return $?
   doco_proxy || return $?
 
   tty --silent && D_OPT+=( --interactive --tty )
@@ -60,11 +63,11 @@ function dockerized_docker_compose () {
 }
 
 
-function doco_compofile () {
+function doco_cfg_compo_file__insert_inside_prefix () {
   local SPEC="$COMPOSE_FILE"
   [ -n "$SPEC" ] || return 0
   SPEC=":$SPEC"
-  SPEC="${SPEC//:/:"$INSIDE_PREFIX/"}"
+  SPEC="${SPEC//:/:"${CFG[inside_prefix]}/"}"
   SPEC="${SPEC#:}"
   D_OPT+=( --env COMPOSE_FILE="$SPEC" )
 }

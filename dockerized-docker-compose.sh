@@ -13,7 +13,8 @@ function dockerized_docker_compose () {
   [ -w "$SOK" ] || return 4$(
     echo "E: No write access to $SOK – is user '$USER' in group docker?" >&2)
   local ENV_OPTNAME='--env'
-  local D_TASK=( "$1" ); shift
+  local D_TASK="$1"; shift
+  local D_EARLY_OPT=()
 
   local COMPOSE_FILE="$COMPOSE_FILE"
   [ -n "$COMPOSE_FILE" ] || for COMPOSE_FILE in docker-compose.y{a,}ml ''; do
@@ -31,7 +32,7 @@ function dockerized_docker_compose () {
       echo "E: $FUNCNAME: Failed to source $ITEM" >&2)
   done
 
-  case "${D_TASK[0]}" in
+  case "$D_TASK" in
     build )
       # ENV_OPTNAME='--build-arg'
       # ^-- nope, docker-compose doesn't support this
@@ -42,10 +43,16 @@ function dockerized_docker_compose () {
   [ -n "${CFG[inside_prefix]}" ] \
     || CFG[inside_prefix]="/code/${CFG[project_name]}"
 
-  local D_OPT=(
+  local TTY_OPT=()
+  tty --silent && TTY_OPT+=( --interactive --tty )
+
+  local OUTER_RUN=(
+    docker
+    run
     --volume="$SOK:$SOK:rw"
     --volume="${PWD:-/proc/E/err_no_pwd}:${CFG[inside_prefix]}:rw"
     --env COMPOSE_PROJECT_NAME="${CFG[project_name]}"
+    "${TTY_OPT[@]}"
     --rm
     --name "${CFG[project_name]}_compose_$$"
     --workdir "${CFG[inside_prefix]}"
@@ -53,13 +60,20 @@ function dockerized_docker_compose () {
   doco_cfg_compo_file__insert_inside_prefix || return $?
   doco_proxy || return $?
 
-  tty --silent && D_OPT+=( --interactive --tty )
-  D_OPT+=(
+  OUTER_RUN+=(
     docker/compose:latest
     )
 
-  [ "$DBGLV" -lt 2 ] || echo "D: docker run ${D_OPT[*]} ${D_TASK[*]} $*" >&2
-  docker run "${D_OPT[@]}" "${D_TASK[@]}" "$@" || return $?
+  local D_CMD=(
+    "${OUTER_RUN[@]}"
+    "$D_TASK"
+    "${D_EARLY_OPT[@]}"
+    "$@"
+    )
+  [ "$DBGLV" -lt 2 ] || echo "D: ${D_CMD[*]}" >&2
+  "${D_CMD[@]}"; local D_RV=$?
+
+  return "$D_RV"
 }
 
 
@@ -69,7 +83,7 @@ function doco_cfg_compo_file__insert_inside_prefix () {
   SPEC=":$SPEC"
   SPEC="${SPEC//:/:"${CFG[inside_prefix]}/"}"
   SPEC="${SPEC#:}"
-  D_OPT+=( --env COMPOSE_FILE="$SPEC" )
+  OUTER_RUN+=( --env COMPOSE_FILE="$SPEC" )
 }
 
 

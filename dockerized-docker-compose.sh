@@ -15,6 +15,11 @@ function dockerized_docker_compose () {
   local ENV_OPTNAME='--env'
   local D_TASK=( "$1" ); shift
 
+  local COMPOSE_FILE="$COMPOSE_FILE"
+  [ -n "$COMPOSE_FILE" ] || for COMPOSE_FILE in docker-compose.y{a,}ml ''; do
+    [ -f "$COMPOSE_FILE" ] && break
+  done
+
   local ITEM=
   for ITEM in "$FUNCNAME".rc; do
     [ -f "$ITEM" ] || continue

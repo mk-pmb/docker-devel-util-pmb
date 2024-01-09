@@ -16,7 +16,7 @@ services:
         - df'DB_DRIVER=pgsql'
         - df'SERVER=postgres'
         - df'PORT=5432'
-        - df'DB=magic'
+        - df'DB=postgres'
         - df'USER=postgres'
         - ${dd_cfg}df'PASSWORD=POSTGRES_PASSWORD'
 

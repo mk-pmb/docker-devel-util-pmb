@@ -10,6 +10,7 @@ services:
     image: 'postgres:14-alpine'
     volumes:
       - ${dd_dir}'@/postgres.data/v14:/pgdata'
+      # - ${dd_dir}'secrets/postgres.pswd.txt:/run/secrets/postgres/initpswd:ro'
     restart: always
     environment:
       - 'PGDATA=/pgdata'

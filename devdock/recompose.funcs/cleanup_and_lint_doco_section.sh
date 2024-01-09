@@ -7,7 +7,7 @@ function devdock_recompose__cleanup_and_lint_doco_section () {
   local CLEANUP='
     s~\s+$~~
     '
-  local TEXT=$'\n'"$(sed -rf <(echo "$CLEANUP"))"$'\n'
+  local TEXT="$(sed -rf <(echo "$CLEANUP"))"
 
   while [[ "$TEXT" == $'\n'* ]]; do TEXT="${TEXT#$'\n'}"; done
   while [[ "$TEXT" == *$'\n' ]]; do TEXT="${TEXT%$'\n'}"; done

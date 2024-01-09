@@ -53,19 +53,10 @@ function devdock_recompose__split_doco_sections () {
 
   [ -n "$CUR_SECT" ] || return 7$(echo 'E: Found no top-level sections' >&2)
 
-  local LINT=
   for CUR_SECT in $SECT_HAD ; do
     BUF="${SECT_TEXTS["$CUR_SECT"]}"
-    while [[ "$BUF" == $'\n'* ]]; do BUF="${BUF#$'\n'}"; done
-    while [[ "$BUF" == *$'\n' ]]; do BUF="${BUF%$'\n'}"; done
-
-    LINT="$(devdock_lint_sect "$CUR_SECT" <<<"$BUF")"
-    [ -z "$LINT" ] || return 5$(
-      echo "E: Found lint in section '$CUR_SECT' from $ENAB_FILE:" >&2
-      echo "$LINT" >&2)
-
-    BUF="  # >>> $CUR_SECT from $ENAB_FILE >>>"$'\n'"$BUF"$'\n'
-    BUF+="  # <<< $CUR_SECT from $ENAB_FILE <<<"$'\n\n'
+    BUF="$(devdock_recompose__cleanup_and_lint_doco_section \
+      "$CUR_SECT from $ENAB_FILE" <<<"$BUF")"$'\n\n' || return $?
     DOCO_SECTIONS["$CUR_SECT"]+="$BUF"
   done
 }

@@ -20,7 +20,7 @@ services:
         - df'USER=postgres'
         - ${dd_cfg}df'PASSWORD=POSTGRES_PASSWORD'
 
-        - 'ADMINER_DESIGN=pepa-linha-dark'
+        # - 'ADMINER_DESIGN=pepa-linha-dark'
         - 'ADMINER_PLUGINS='
     ports:
       - '127.0.0.1:5480:8080'

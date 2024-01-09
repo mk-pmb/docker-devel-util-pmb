@@ -2,7 +2,7 @@
 # -*- coding: UTF-8, tab-width: 2 -*-
 ---
 
-version: '3'
+version: '2.2'
 
 services:
 

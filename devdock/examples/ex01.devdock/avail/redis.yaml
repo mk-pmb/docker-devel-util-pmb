@@ -1,8 +1,8 @@
 %YAML 1.1
-# -*- coding: UTF-8, tab-width: 4 -*-
+# -*- coding: UTF-8, tab-width: 2 -*-
 ---
 
-version: '3'
+version: '2.2'
 services:
 
   ${dd_tpl_bn}'_db':

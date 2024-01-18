@@ -9,11 +9,15 @@ function devdock_recompose () {
   local C_DEST="$COMPOSE_FILE"
   local C_TMP="$C_DIR/tmp.next.$(basename -- "$C_DEST")"
 
+  [ ! -d "cfg@$HOSTNAME" ] || return 5$(
+    echo E: "DevDock no longer supports 'cfg@$HOSTNAME'!" \
+      "Please rename it to 'config.@$HOSTNAME'." >&2)
+
   local DOCO_VER=
   local -A CFG=()
   local -A ENV_SECRETS=()
   local ITEM=
-  for ITEM in {config,cfg@$HOSTNAME,secrets}/*.rc; do
+  for ITEM in $(devdock_find_subdir_files rc config secrets); do
     [ -f "$ITEM" ] || continue
     devdock_source_in_func "$ITEM" || return $?$(
       echo "E: Failed to source $ITEM" >&2)
@@ -22,7 +26,7 @@ function devdock_recompose () {
     echo "E: Your project uses the deprecated ENV_SECRETS feature." >&2)
 
   local -A DOCO_SECTIONS=()
-  for ITEM in enabled/*.yaml; do
+  for ITEM in $(devdock_find_subdir_files yaml enabled); do
     devdock_recompose__one_enab_file "$ITEM" || return $?
   done
 

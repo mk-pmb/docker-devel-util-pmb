@@ -14,13 +14,17 @@ Some docker utilities for software developers.
 Install instructions
 --------------------
 
-The lazy way:<br>
+#### The lazy way
+
 `git clone https://github.com/mk-pmb/docker-devel-util-pmb /tmp/d && sudo -E /tmp/d/install_globally.sh`
 
-The proper way:
+
+#### The proper way
 
 1.  Use Ubuntu focal or later.
-1.  Clone this directory somewhere:<br>
+1.  Choose a temporary directory (not in `/usr`) for where to clone the repo.
+    * The install script will move the repo directory to `/usr/local/lib/`.
+1.  Clone this directory:<br>
     `git clone https://github.com/mk-pmb/docker-devel-util-pmb`
 1.  If you need a specific version, check `package.json` for
     the version number. It should be within the first few lines.

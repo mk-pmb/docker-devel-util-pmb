@@ -48,6 +48,7 @@ Known issues
 
 License
 -------
+
 <!--#echo json="package.json" key=".license" -->
-GPL-3.0
+GPL-3.0-or-later
 <!--/#echo -->

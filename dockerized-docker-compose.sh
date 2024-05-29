@@ -87,7 +87,7 @@ function dockerized_docker_compose () {
     docker/compose:latest
     )
 
-  doco_fallible_actually_do_stuff; local D_RV=$?
+  doco_fallible_actually_do_stuff "$@"; local D_RV=$?
 
   [ -z "$STERN_WARNINGS" ] || echo "W: $APP_NAME:" \
     "In case there was a lot of output above," \

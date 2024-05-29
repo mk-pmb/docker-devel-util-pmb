@@ -41,6 +41,7 @@ function devdock_recompose__unwrap_doco_yaml () {
   TRACE=
   while IFS= read -r BUF; do
     (( LNUM += 1 ))
+    # echo D: $FUNCNAME: "$ENAB_FILE <$LNUM> $BUF" >&2
     case "$BUF" in
       '...' )
         grep -qPe '\S' || return 0

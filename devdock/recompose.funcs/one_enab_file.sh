@@ -4,6 +4,7 @@
 
 function devdock_recompose__one_enab_file () {
   local ENAB_FILE="$1"
+  local APOS="'" QUOT='"'
   local LNUM=0 CONTENT_START_LNUM= YAML=
   devdock_recompose__unwrap_doco_yaml < <(sed -rf <(echo '
     1s~^%YAML .*$~~
@@ -45,6 +46,9 @@ function devdock_recompose__one_enab_file () {
     | cut --bytes=2- | LANG=C sort --unique)
   [ "${#MISS[@]}" == 0 ] || return 4$(
     echo "E: Unsolved slots in template $ENAB_FILE: ${MISS[*]}" >&2)
+
+  devdock_sanck || return $?$(
+    echo E: "Sanity checks failed for template $ENAB_FILE" >&2)
 
   LNUM="$CONTENT_START_LNUM"
   devdock_recompose__split_doco_sections <<<"$YAML" || return $?$(

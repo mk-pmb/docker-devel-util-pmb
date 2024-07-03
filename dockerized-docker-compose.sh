@@ -17,6 +17,9 @@ function dockerized_docker_compose () {
   local STERN_WARNINGS=
 
   local COMPOSE_FILE="$COMPOSE_FILE"
+  [ -n "$COMPOSE_FILE" ] || case "$D_TASK" in
+    version | --version ) COMPOSE_FILE='/dev/null';;
+  esac
   [ -n "$COMPOSE_FILE" ] || for COMPOSE_FILE in docker-compose.y{a,}ml ''; do
     [ -f "$COMPOSE_FILE" ] && break
   done
@@ -163,6 +166,9 @@ function doco_gen_proxy_opt () {
 
 
 function doco_advise_on_compose_file_version () {
+  case "$COMPOSE_FILE" in
+    /dev/null ) return 0;;
+  esac
   local CF_VER="$(sed -nre 's~^version:~~p' -- "$COMPOSE_FILE")"
   CF_VER="${CF_VER//[$'\x22\x27 \t']/}"
   local ERR=

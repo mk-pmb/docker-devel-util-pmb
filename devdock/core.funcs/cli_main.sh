@@ -38,10 +38,11 @@ function devdock_cli_main () {
   case "$TASK" in
     up )
       if [ -f "$COMPOSE_FILE" ]; then
-        echo "D: before 'up', 'down' potential old container:"
+        echo D: "before 'up', 'down' potential old container:"
         docompose down || return $?
       fi
-      devdock_recompose || return $?
+      devdock_recompose || return $?$(
+        echo E: "Flinching: Failed to recompose." >&2)
       ;;
   esac
 

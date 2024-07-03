@@ -6,6 +6,7 @@ function devdock_recompose__append_doco_sections () {
   local LIST=()
   readarray -t LIST < <(
     printf -- '%s\n' "${!DOCO_SECTIONS[@]}" | LANG=C sort --version-sort)
+  [ -n "${LIST[*]}" ] || LIST=()
   LIST=(
     services
     volumes

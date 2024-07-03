@@ -1,0 +1,68 @@
+# -*- coding: utf-8, tab-width: 2 -*-
+
+# If none of your `enabled` files configures a network, a default bridge
+# network will be created. It supports these optional config options:
+
+
+CFG[default_network_bridge_name]=''
+# Name of your bridge.
+# Default = empty = Use `br-` + your project name.
+
+
+CFG[default_network_bridge_subnet]=''
+# IP address range for your bridge, in CIDR prefix notation (xx.xx.xx.xx/p,
+# RFC 4632 section 3.1).
+# Default = empty = Docker shall choose.
+# Docker will typically choose something like `172.19.0.0/16` where the 2nd
+# number (`19` in this case) will increase each time you restart your project,
+# until it probably wraps around at some point.
+#
+# To test this:
+#   1.  Make a project where only pyhttpd is enabled and subnet range is empty.
+#   2.  Run `docker ps` to find the container name of pyhttpd.
+#       For this explanation, we'll assume it is `ex01_pyhttpd_1`.
+#   3.  (Re-)Start you project (`./dock.sh bgup`) and run:
+#           docker exec ex01_pyhttpd_1 ip a | grep -oPe 'inet \S+(?=.* eth)'
+#   4.  You should see a line like this:
+#           inet 172.19.0.2/16
+#   5.  Repeat step 3.
+#       This time, the `inet` line will probably be different, e.g.
+#           inet 172.20.0.2/16
+#   6.  Optionally repeat even more, and your luck of getting different
+#       `inet` lines should increase. However, for your firewall setup,
+#       this "luck" is probably more of an annoyance.
+#   7.  Configure your custom subnet range.
+#   8.  Repeat step 3.
+#       This time, the `inet` line should conform to your subnet setting.
+
+
+CFG[default_network_bridge_gateway]=''
+# IP address of the default gateway for your default network.
+# Default = empty = Docker shall arrange it. = Usually, Docker will assign
+# the first available IP in your subnet range to itself and use that as a
+# gateway and will arrange routing towards the host system's network.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# This line is dedicated to Florian Balmer. Thank you for creating Notepad2!

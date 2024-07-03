@@ -17,7 +17,8 @@ function devdock_recompose__append_doco_sections () {
   for SECT in "${LIST[@]}"; do
     TEXT="${DOCO_SECTIONS["$SECT"]}"
     [ -z "$TEXT" ] || continue
-    TEXT="$(devdock_doco_section_defaults "$SECT")"
+    TEXT="$(devdock_doco_section_defaults "$SECT")" || return $?$(
+      echo E: $FUNCNAME: "Failed to devdock_doco_section_defaults '$SECT'" >&2)
     [ -n "$TEXT" ] || continue
     TEXT="$(
       CUR_SECT="$SECT" devdock_recompose__cleanup_and_lint_doco_section \

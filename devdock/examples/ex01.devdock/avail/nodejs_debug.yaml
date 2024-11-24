@@ -6,7 +6,7 @@ version: '2.2'
 services:
 
   ${dd_tpl_bn}'':
-    image: 'node:16'
+    image: 'node:22'
 
     command: sh -c 'date -R && sleep 9009009d'
     # ^-- To start an actual debug shell, run:

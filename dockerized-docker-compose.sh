@@ -12,6 +12,15 @@ function dockerized_docker_compose () {
   local SOK='/var/run/docker.sock'
   [ -w "$SOK" ] || return 4$(
     echo "E: No write access to $SOK – is user '$USER' in group docker?" >&2)
+
+  local D_PRE_TASK_OPT=()
+  while true; do case "$1" in
+    --profile | \
+    ___pre_task_1_arg___ )
+      D_PRE_TASK_OPT+=( "$1" "$2" )
+      shift; shift;; # `shift 2` would fail if we only have 1 arg.
+    * ) break;;
+  esac; done
   local D_TASK="$1"; shift
   local D_EARLY_OPT=()
   local STERN_WARNINGS=
@@ -126,6 +135,7 @@ function doco_fallible_actually_do_stuff () {
 
   local D_CMD=(
     "${OUTER_RUN[@]}"
+    "${D_PRE_TASK_OPT[@]}"
     "$D_TASK"
     "${D_EARLY_OPT[@]}"
     "$@"

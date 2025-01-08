@@ -52,7 +52,23 @@ function dkdirsemi_cli_main () {
 
   set -- docker exec "${DK_OPT[@]}" "$CNAME" \
     ${CFG[cmd:default_exec_pre]} "$@"
+  dkdirsemi_debugdump_list 2 'D: effective docker command:' "$@"
   exec "$@" || return $?
+}
+
+
+function dkdirsemi_debugdump_list () {
+  [ "$DBGLV" -ge "$1" ] || return 0
+  shift
+  echo -n "$1"; shift
+  local Q="${CFG[debug:quotes]}"
+  case "$Q" in
+    '' ) Q=' ‹%s›';;
+    *%s* | *%q* ) ;;
+    * ) Q="${Q//%/%%}"; Q=" ${Q/ /%s}";;
+  esac
+  printf -- "$Q" "$@"
+  echo
 }
 
 
@@ -149,8 +165,7 @@ function dkdirsemi_init () {
     "${CFG[ctnr:image]}"
     ${CFG[cmd:keepalive]}
     )
-  [ "$DBGLV" -lt 2 ] || echo D: "effective docker command:$(
-    printf -- ' ‹%s›' "${DK_CMD[@]}")"
+  dkdirsemi_debugdump_list 2 'D: effective docker command:' "${DK_CMD[@]}"
   local CTNR_ID= # pre-declare so `local` doesn't hide the return value of $()
   CTNR_ID="$("${DK_CMD[@]}")" || return $?$(
     echo E: 'Failed to create the docker container!' >&2)

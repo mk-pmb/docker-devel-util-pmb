@@ -49,8 +49,10 @@ function dkdirsemi_cli_main () {
     stop | \
     _* ) VAL="dkdirsemi_${1#_}"; shift; "$VAL" "$@"; return $?;;
   esac
-  exec docker exec "${DK_OPT[@]}" "$CNAME" \
-    ${CFG[cmd:default_exec_pre]} "$@" || return $?
+
+  set -- docker exec "${DK_OPT[@]}" "$CNAME" \
+    ${CFG[cmd:default_exec_pre]} "$@"
+  exec "$@" || return $?
 }
 
 

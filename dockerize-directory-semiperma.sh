@@ -22,6 +22,7 @@ function dkdirsemi_cli_main () {
     [ctnr:name:suf]='-<dir:basename>'
     [ctnr:name]='dkdir'
     [ctnr:workdir]='/app'
+    [ctnr:net]='hdi'  # or use 'host' for fully shared connectivity
     [libdir:"$SELFPATH"]=:
     [vol:/app]='.:rw'
     )
@@ -156,6 +157,13 @@ function dkdirsemi_init () {
     VAL="${CFG[ctnr:$KEY]}"
     [ -z "$VAL" ] || DK_CMD+=( "--$KEY=$VAL" )
   done
+
+  VAL="${CFG[ctnr:net]}"
+  case "$VAL" in
+    '' ) ;;
+    'hdi' ) DK_CMD+=( --add-host=host.docker.internal:host-gateway );;
+    * ) DK_CMD+=( --net="$VAL" )
+  esac
 
   cfg_parse_libdirs || return $?
   cfg_parse_volumes || return $?

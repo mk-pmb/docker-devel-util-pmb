@@ -13,6 +13,14 @@ function devdock_doco_section_defaults () {
 function devdock_doco_section_defaults__networks () {
   local DF='default_network_bridge_'
   local BR_NAME="${CFG[${DF}name]:-br-$DD_PROJ}"
+  BR_NAME="$(echo "${BR_NAME,,}" | tr -sc 'a-z0-9' -)"
+  BR_NAME="${BR_NAME%-}"
+
+  local MAX_IFACE_NAME_LENGTH=15
+  # ^-- Error message if too long: "numerical result out of range"
+  BR_NAME="${BR_NAME:0:$MAX_IFACE_NAME_LENGTH}"
+  BR_NAME="${BR_NAME%-}"
+
   echo "
     default:
       driver: 'bridge'

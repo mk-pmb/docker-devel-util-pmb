@@ -17,7 +17,7 @@ function dkdirsemi_cli_main () {
     [cmd:keepalive]='sleep 9009009d'
     [cmd:symlink]='ln -sfT --'
     [ctnr:hostname]=''
-    [ctnr:image]='ubuntu:<lsb_release:codename>'
+    [ctnr:image]=''
     [ctnr:name:pre]=''
     [ctnr:name:suf]='-<dir:basename>'
     [ctnr:name]='dkdir'
@@ -43,13 +43,26 @@ function dkdirsemi_cli_main () {
   esac; done
   local VAL=
   case "$1" in
+    '' )
+      echo E: "No command given. You could try one of:" \
+        "init reinit stop exec pwd ls sh" >&2
+      return 4;;
+
     exec ) shift;;
 
     init | \
     reinit | \
     stop | \
-    _* ) VAL="dkdirsemi_${1#_}"; shift; "$VAL" "$@"; return $?;;
+    _* )
+      VAL="${1#_}"
+      shift
+      dkdirsemi_"$VAL" "$@" || return $?$(echo E: "$VAL failed, rv=$?" >&2)
+      return 0;;
   esac
+
+  VAL="$(docker inspect --format='{{.Name}}' -- "$CNAME")"
+  [ "$VAL" == "/$CNAME" ] || return 4$(
+    echo E: "Cannot find docker container named '$CNAME'. Try 'init'." >&2)
 
   set -- docker exec "${DK_OPT[@]}" "$CNAME" \
     ${CFG[cmd:default_exec_pre]} "$@"
@@ -114,6 +127,50 @@ function dkdirsemi_must_find_ka_pid () {
 }
 
 
+function cfg_auto_guess_image () {
+  local IMG="${CFG[ctnr:image]}"
+  if [ -z "$IMG" ]; then
+    cfg_auto_guess_image__inner || return $?
+    CFG[ctnr:image]="$IMG"
+    echo D: "Guessing [ctnr:image]='$IMG'"
+  fi
+  case "$IMG" in
+    *:'<auto-versnum>'* ) cfg_auto_guess_image__auto_versnum || return $?;;
+  esac
+}
+
+
+function cfg_auto_guess_image__inner () {
+  if [ -f package.json -a -s package.json ]; then
+    IMG='node:<auto-versnum>highest|20'
+    return 0
+  fi
+
+  IMG="ubuntu:$(lsb_release --short --codename)"
+}
+
+
+function cfg_auto_guess_image__auto_versnum () {
+  local VAL="$IMG" REV= VER= IMG=
+  IMG="${VAL%%':<auto-versnum>'*}"
+  [ "$IMG" != "$VAL" ] || return 4$(echo E: "Split failed in $FUNCNAME" >&2)
+  VAL="${VAL#*':<auto-versnum>'}|"
+  case "$VAL" in
+    highest'|'* ) VAL="${VAL#*'|'}";;
+    lowest'|'* ) VAL="${VAL#*'|'}"; REV='--reverse';;
+    * ) echo E: $FUNCNAME: "Expexted 'highest' or 'lowest'" >&2; return 4;;
+  esac
+  VER="${VAL%'|'}"
+  VAL="$(docker images --format '{{.Tag}}' -- node | sort --version-sort)"
+  VAL="${VAL##*$'\n'}"
+  [ -z "$VAL" ] || VER="$VAL"
+
+  IMG+=":$VER"
+  CFG[ctnr:image]="$IMG"
+  echo D: "Adjusting [ctnr:image] version to: '$IMG'"
+}
+
+
 function dkdirsemi_stop () {
   local KA_PID="$(dkdirsemi_must_find_ka_pid)"
   [ -n "$KA_PID" ] || return 4
@@ -167,6 +224,7 @@ function dkdirsemi_init () {
 
   cfg_parse_libdirs || return $?
   cfg_parse_volumes || return $?
+  cfg_auto_guess_image || return $?
 
   DK_CMD+=(
     ${CFG[ctnr:run_opts]}

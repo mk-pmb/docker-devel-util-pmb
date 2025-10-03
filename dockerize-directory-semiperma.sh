@@ -58,6 +58,12 @@ function dkdirsemi_cli_main () {
       shift
       dkdirsemi_"$VAL" "$@" || return $?$(echo E: "$VAL failed, rv=$?" >&2)
       return 0;;
+
+    sh )
+      shift
+      tty --silent && DK_OPT+=( --interactive --tty ) || true
+      set -- bash "$@";;
+
   esac
 
   VAL="$(docker inspect --format='{{.Name}}' -- "$CNAME")"

@@ -12,21 +12,9 @@ function dkdirsemi_cli_main () {
     . ) shift;;
     '~'/* ) cd -- "$HOME${1:1}" || return $?; shift;;
   esac
-  local -A CFG=(
-    [cmd:default_exec_pre]=''
-    [cmd:keepalive]='sleep 9009009d'
-    [cmd:symlink]='ln -sfT --'
-    [ctnr:hostname]=''
-    [ctnr:image]=''
-    [ctnr:name:pre]=''
-    [ctnr:name:suf]='-<dir:basename>'
-    [ctnr:name]='dkdir'
-    [ctnr:workdir]='/app'
-    [ctnr:net]='hdi'  # or use 'host' for fully shared connectivity
-    [libdir:"$SELFPATH"]=:
-    [vol:/app]='.:rw'
-    )
-  while [[ "$1" == *=* ]]; do CFG["${1%%=*}"]="${1#*=}"; shift; done
+  local -A CFG=()
+  dkdirsemi_cfg_defaults
+  while [[ "$1" == [a-z]*=* ]]; do CFG["${1%%=*}"]="${1#*=}"; shift; done
   dkdirsemi_fill_cfg_slots || return $?
 
   local CNAME="${CFG[ctnr:name:pre]}${CFG[ctnr:name]}${CFG[ctnr:name:suf]}"
@@ -38,6 +26,7 @@ function dkdirsemi_cli_main () {
   local DK_OPT=()
   while [ "$#" -ge 1 ]; do case "$1" in
     -- ) shift; break;;
+    --help ) shift; dkdirsemi_cli_help "$@"; return $?;;
     -* ) DK_OPT+=( "$1" ); shift;;
     * ) break;;
   esac; done
@@ -64,6 +53,7 @@ function dkdirsemi_cli_main () {
       tty --silent && DK_OPT+=( --interactive --tty ) || true
       set -- bash "$@";;
 
+    help ) shift; dkdirsemi_cli_help "$@"; return $?;;
   esac
 
   VAL="$(docker inspect --format='{{.Name}}' -- "$CNAME")"
@@ -74,6 +64,41 @@ function dkdirsemi_cli_main () {
     ${CFG[cmd:default_exec_pre]} "$@"
   dkdirsemi_debugdump_list 2 'D: effective docker command:' "$@"
   exec "$@" || return $?
+}
+
+
+function dkdirsemi_cfg_defaults () {
+  CFG=(
+    [cmd:default_exec_pre]=''
+    [cmd:keepalive]='sleep 9009009d'
+    [cmd:symlink]='ln -sfT --'
+    [ctnr:hostname]=''
+    [ctnr:image]=''   # Empty = guess.
+    [ctnr:name:pre]=''
+    [ctnr:name:suf]='-<dir:basename>'
+    [ctnr:name]='dkdir'
+    [ctnr:workdir]='/app'
+    [ctnr:net]='hdi'  # or use 'host' for fully shared connectivity
+    [libdir:"$SELFPATH"]=:
+    [vol:/app]='.:rw'
+    )
+}
+
+
+function dkdirsemi_cli_help () {
+  echo 'CLI arguments: [path] [option=value [option=value …]]' \
+    '[--docker-option [--docker-option …]]' \
+    '[--] action [argument [argument …]]'
+  echo
+  echo 'The default options are:'
+  local IMG="${CFG[ctnr:image]}"
+  sed -nre '/^function dkdirsemi_cfg_defaults /,/^\}/p' -- "$BASH_SOURCE" |
+    sed -zre 's~\\\n\s+~~g' |
+    sed -nre 's~^\s+\[~~p' | sed -nre 's~\]~~p' |
+    sed -re '/^ctnr:image=/s~$~ Currently, the guess would be: '"'$IMG'~" |
+    sed -re 's:"\$SELFPATH":'"'$SELFPATH':" |
+    sed -re 's~^~  • ~'
+  echo
 }
 
 
@@ -331,7 +356,7 @@ function cfg_parse_volumes () {
 
 
 function cfg_create_symlinks () {
-  # sym:inside-link=inside-target
+  # CFG[sym:inside-link]=inside-target
   local KEY= LNK= TGT=
   for KEY in "${!CFG[@]}"; do
     [[ "$KEY" == sym:* ]] || continue

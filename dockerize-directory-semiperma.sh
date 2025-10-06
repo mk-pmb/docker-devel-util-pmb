@@ -72,13 +72,15 @@ function dkdirsemi_cfg_defaults () {
     [cmd:default_exec_pre]=''
     [cmd:keepalive]='sleep 9009009d'
     [cmd:symlink]='ln -sfT --'
+    [ctnr:cpu-count]='1'
     [ctnr:hostname]=''
     [ctnr:image]=''   # Empty = guess.
+    [ctnr:memory]='512M'
     [ctnr:name:pre]=''
     [ctnr:name:suf]='-<dir:basename>'
     [ctnr:name]='dkdir'
-    [ctnr:workdir]='/app'
     [ctnr:net]='hdi'  # or use 'host' for fully shared connectivity
+    [ctnr:workdir]='/app'
     [libdir:"$SELFPATH"]=:
     [vol:/app]='.:rw'
     )

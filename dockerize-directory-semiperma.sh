@@ -303,6 +303,8 @@ function cfg_parse_libdirs () {
     SUB="${KEY#*:}"
     INNER="${CFG[$KEY]}"
     OUTER="$SUB"
+    [ "${OUTER/:/}" == "$OUTER" ] || return 4$(echo E: $FUNCNAME: >&2 \
+      "Host-side path must not contain a colon: '$OUTER'")
     PROG=
     [[ "$OUTER" == */* ]] || dkdirsemi_cfgkey_libdir__which || return $?
     OUTER="${OUTER%/}"

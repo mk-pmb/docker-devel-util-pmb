@@ -12,8 +12,27 @@ function dkdirsemi_cli_main () {
     . ) shift;;
     '~'/* ) cd -- "$HOME${1:1}" || return $?; shift;;
   esac
+
   local -A CFG=()
   dkdirsemi_cfg_defaults
+  # Set early options to be used in rc files:
+  while [[ "$1" == [a-z]*=* ]]; do CFG["${1%%=*}"]="${1#*=}"; shift; done
+
+  local VAL=
+  if [ "$1" == --rc ]; then
+    # The rc files are run on the host, so only use this option if you can
+    # fully trust the project! Even if you checked them at first run,
+    # programs inside the container may be able to modify and thus trick
+    # you into running the modified rc files later!
+    shift
+    for VAL in .{git/,}{"$SELFABBR","$SELFNAME"}/{rc.,*.rcd/}*.sh; do
+      [ -f "$VAL" ] || continue
+      in_func source -- "$VAL" --rc || return $?$(
+        echo E: "Failed to source rc file (rv=$?): $VAL" >&2)
+    done
+  fi
+
+  # Set late options to maybe override what the rc files did:
   while [[ "$1" == [a-z]*=* ]]; do CFG["${1%%=*}"]="${1#*=}"; shift; done
   dkdirsemi_fill_cfg_slots || return $?
 
@@ -30,7 +49,6 @@ function dkdirsemi_cli_main () {
     -* ) DK_OPT+=( "$1" ); shift;;
     * ) break;;
   esac; done
-  local VAL=
   case "$1" in
     '' )
       echo E: "No command given. You could try one of:" \
@@ -102,6 +120,9 @@ function dkdirsemi_cli_help () {
     sed -re 's~^~  • ~'
   echo
 }
+
+
+function in_func () { "$@"; }
 
 
 function dkdirsemi_debugdump_list () {

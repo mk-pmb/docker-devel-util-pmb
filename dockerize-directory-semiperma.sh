@@ -4,7 +4,10 @@
 
 function dkdirsemi_cli_main () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
-  local SELFPATH="$(readlink -m -- "$BASH_SOURCE"/..)"
+  local SELFFILE="$(readlink -m -- "$BASH_SOURCE")"
+  local SELFPATH="$(dirname -- "$SELFFILE")"
+  local SELFNAME="$(basename -- "$SELFFILE" .sh)"
+  local SELFABBR="${FUNCNAME%%_*}"
   local DBGLV="${DEBUGLEVEL:-0}"
   # cd -- "$SELFPATH" || return $?
   case "$1" in
@@ -277,6 +280,7 @@ function dkdirsemi_init () {
   esac
 
   cfg_parse_libdirs || return $?
+  cfg_scan_bindvol_dirs || return $?
   cfg_parse_volumes || return $?
   cfg_auto_guess_image || return $?
 
@@ -349,6 +353,47 @@ function dkdirsemi_cfgkey_libdir__which () {
     "but failed to resolve its parent directory.")
   PROG="$OUTER=$(basename -- "$ABSO")"
   OUTER="$PAR"
+}
+
+
+function cfg_scan_bindvol_dirs () {
+  # Example usecase: node_modules; see `dockerize-directory-semiperma.md`
+  local BV_DIRS=(
+    {.,.[A-Za-z@]*/,[A-Za-z@]*/.}{"$SELFABBR","$SELFNAME"}/bindvol
+    )
+  local BV_LINKS=()
+  local BV_DIR= BV_OVL= BV_LINK= BV_MPNT=
+  for BV_DIR in "${BV_DIRS[@]}"; do
+    [ -d "$BV_DIR" ] || continue
+    [ -L "$BV_DIR" ] && return 4$(
+      echo E: "$SELFNAME: bindvol directory must not be a symlink," \
+        "because docker cannot use that as a mountpoint: $BV_DIR" >&2)
+    BV_OVL="$BV_DIR"/.tmp.overlay
+    [ -L "$BV_OVL" ] && rm -- "$BV_OVL" || true
+    [ -d "$BV_OVL" ] && rm --one-file-system --recursive -- "$BV_OVL" || true
+    mkdir -- "$BV_OVL" || return 4$(echo E: "$SELFNAME: Failed to" >&2 \
+      "re-create bindvol overlay directory to ensure it's empty: $BV_OVL")
+    cfg_set_derived "vol:/app/$BV_DIR" "$BV_OVL:rw" \
+      'bindvol directory overlay basedir' || return $?
+    BV_LINKS=()
+    readarray -t BV_LINKS < <(
+      cd -- "$BV_DIR" && find -mount -type l | LANG=C sort -V)
+    for BV_LINK in "${BV_LINKS[@]}" ; do
+      case "$BV_LINK" in
+        '' | . | ./ ) continue;;
+        ./* ) BV_LINK="${BV_LINK:2}";;
+        * )
+          echo E: "$SELFNAME: Found an unexpected bindvol directory entry:" \
+            "'$BV_DIR' / '$BV_LINK'" >&2
+          return 4;;
+      esac
+      mkdir --parents -- "$BV_OVL/$BV_LINK"
+      # ^-- Docker would auto-create them as root if we don't, in which case
+      #     the `reinit` action may be unable to cleanly rmdir them.
+      cfg_set_derived "vol:/app/$BV_DIR/$BV_LINK" "$BV_DIR/$BV_LINK:ro" \
+        'bindvol directory entry' || return $?
+    done
+  done
 }
 
 

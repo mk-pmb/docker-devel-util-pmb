@@ -2,6 +2,7 @@
 DevDock todo
 ============
 
+
 Imagine this typo:
 
 ```text
@@ -12,6 +13,10 @@ Imagine this typo:
 
 
 Thus: Make ${DD:dirr} (empty variable) a syntax error
+
+* Make a syntax for warning or even error if a path doesn't exist,
+  to avoid accidentially creating volume mount directories as root.
+
 
 
 

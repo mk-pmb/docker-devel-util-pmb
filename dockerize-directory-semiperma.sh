@@ -218,7 +218,9 @@ function cfg_auto_guess_image__auto_versnum () {
     * ) echo E: $FUNCNAME: "Expexted 'highest' or 'lowest'" >&2; return 4;;
   esac
   VER="${VAL%'|'}"
-  VAL="$(docker images --format '{{.Tag}}' -- node | sort --version-sort)"
+  VAL="$(docker images --format '{{.Tag}}' -- node |
+    grep -Pe '\d' | # <- ignore `none` entry caused by outdated image layers
+    sort --version-sort)"
   VAL="${VAL##*$'\n'}"
   [ -z "$VAL" ] || VER="$VAL"
 

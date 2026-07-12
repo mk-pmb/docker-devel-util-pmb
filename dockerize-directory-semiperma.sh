@@ -104,6 +104,8 @@ function dkdirsemi_cfg_defaults () {
     [ctnr:workdir]='/app'
     [env:TZ]="$(cat -- /etc/timezone)"
     [libdir:"$SELFPATH"]=:
+    # [tcp:ANY:80]='8000'  # Host port TCP *:80 -> container:8080
+    # [tcp:23]='='  # Host port TCP 127.0.0.1:23 -> container:23
     [vol:/app]='.:rw'
     )
 }
@@ -116,13 +118,21 @@ function dkdirsemi_cli_help () {
   echo
   echo 'The default options are:'
   local IMG="${CFG[ctnr:image]}"
-  sed -nre '/^function dkdirsemi_cfg_defaults /,/^\}/p' -- "$BASH_SOURCE" |
-    sed -zre 's~\\\n\s+~~g' |
-    sed -nre 's~^\s+\[~~p' | sed -nre 's~\]~~p' |
-    sed -re '/^ctnr:image=/s~$~ Currently, the guess would be: '"'$IMG'~" |
-    sed -re 's:"\$SELFPATH":'"'$SELFPATH':" |
-    sed -re 's~^~  • ~'
+  local VAL="$(dkdirsemi_cli_help__scan_raw_defaults)"
+  echo "$VAL" | sed -nre '/^#/!s~^~  • ~p'
   echo
+  echo 'Other useful options might be:'
+  echo "$VAL" | sed -nre 's~^#~  • ~p'
+  echo
+}
+
+
+function dkdirsemi_cli_help__scan_raw_defaults () {
+  sed -nre '/^function dkdirsemi_cfg_defaults /,/^\}/p' -- "$BASH_SOURCE" |
+    sed -zre 's~\\\n\s+~~g' | sed -nre 's~\]~~p' |
+    sed -nre 's~^\s+((#)\s*|)\[~\2~p' |
+    sed -re '/^ctnr:image=/s~$~ Currently, the guess would be: '"'$IMG'~" |
+    sed -re 's:"\$SELFPATH":'"'$SELFPATH':"
 }
 
 
@@ -437,6 +447,17 @@ function cfg_parse_simple_verbatim_opts () {
     KEY="${KEY:${#OPT}+1}"
     case "$OPT" in
       env ) DK_CMD+=( "--$OPT" "$KEY=$VAL" );;
+      tcp | udp )
+        case "$VAL" in
+          = ) VAL="${KEY##*:}";;
+        esac
+        VAL+="/$OPT"
+        case "$KEY" in
+          ANY:* | '*':* ) KEY="0.0.0.0:${KEY#*:}";;
+          *:* ) ;;
+          * ) KEY="127.0.0.1:$KEY";;
+        esac
+        DK_CMD+=( --publish "$KEY:$VAL" );;
     esac
   done
 }

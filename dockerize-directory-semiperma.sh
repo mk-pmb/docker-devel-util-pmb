@@ -102,6 +102,7 @@ function dkdirsemi_cfg_defaults () {
     [ctnr:name]='dkdir'
     [ctnr:net]='hdi'  # or use 'host' for fully shared connectivity
     [ctnr:workdir]='/app'
+    [env:TZ]="$(cat -- /etc/timezone)"
     [libdir:"$SELFPATH"]=:
     [vol:/app]='.:rw'
     )
@@ -284,6 +285,7 @@ function dkdirsemi_init () {
   cfg_parse_libdirs || return $?
   cfg_scan_bindvol_dirs || return $?
   cfg_parse_volumes || return $?
+  cfg_parse_simple_verbatim_opts || return $?
   cfg_auto_guess_image || return $?
 
   DK_CMD+=(
@@ -423,6 +425,19 @@ function cfg_parse_volumes () {
       "$INNER ($MODE) does not exist: $OUTER" >&2)
     OUTER="$(readlink -m -- "$OUTER")"
     DK_CMD+=( "--volume=$OUTER:$INNER:$MODE" )
+  done
+}
+
+
+function cfg_parse_simple_verbatim_opts () {
+  local KEY= OPT= VAL=
+  for KEY in "${!CFG[@]}"; do
+    VAL="${CFG[$KEY]}"
+    OPT="${KEY%%:*}"
+    KEY="${KEY:${#OPT}+1}"
+    case "$OPT" in
+      env ) DK_CMD+=( "--$OPT" "$KEY=$VAL" );;
+    esac
   done
 }
 

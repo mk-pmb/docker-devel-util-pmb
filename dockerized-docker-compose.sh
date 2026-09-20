@@ -82,7 +82,10 @@ function dockerized_docker_compose () {
       ;;
   esac
 
-  local OUTER_RUN=(
+  local OUTER_RUN=()
+  # We have to factor out doco_compile_outer_run_cmd in two steps to make
+  # git-diff understand the change.
+  OUTER_RUN=(
     docker
     run
     --volume="$SOK:$SOK:rw"
@@ -94,11 +97,7 @@ function dockerized_docker_compose () {
     --name "${CFG[project_name]}_compose_$$"
     --workdir "${CFG[inside_prefix]}"
     )
-  doco_cfg_compo_file__insert_inside_prefix || return $?
-  OUTER_RUN+=(
-    docker/compose:latest
-    )
-
+  doco_compile_outer_run_cmd || return $?
   doco_fallible_actually_do_stuff "$@"; local D_RV=$?
 
   [ -z "$STERN_WARNINGS" ] || echo "W: $APP_NAME:" \
@@ -113,6 +112,14 @@ function dockerized_docker_compose () {
 function sternly_warn () {
   STERN_WARNINGS+=$'\n'"$*"
   echo "W: $APP_NAME: $*" >&2
+}
+
+
+function doco_compile_outer_run_cmd () {
+  doco_cfg_compo_file__insert_inside_prefix || return $?
+  OUTER_RUN+=(
+    docker/compose:latest
+    )
 }
 
 

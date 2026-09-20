@@ -25,6 +25,11 @@ function dockerized_docker_compose () {
   local D_EARLY_OPT=()
   local STERN_WARNINGS=
 
+  local D_VER_MAJOR="$(docker --version | grep -oEe '\b[Vv]ersion [0-9]+\.')"
+  D_VER_MAJOR="${D_VER_MAJOR//[^0-9]/}"
+  [ "${D_VER_MAJOR:-0}" -ge 20 ] || return 4$(
+    echo E: 'Failed to determine local docker version!' >&2)
+
   local COMPOSE_FILE="$COMPOSE_FILE"
   [ -n "$COMPOSE_FILE" ] || case "$D_TASK" in
     version | --version ) COMPOSE_FILE='/dev/null';;
@@ -114,10 +119,34 @@ function doco_compile_outer_run_cmd () {
     --name "${CFG[project_name]}_compose_$$"
     --workdir "${CFG[inside_prefix]}"
     )
-  doco_cfg_compo_file__insert_inside_prefix || return $?
-  OUTER_RUN+=(
-    docker/compose:latest
-    )
+
+  if [ "$D_VER_MAJOR" -le 28 ]; then
+    doco_cfg_compo_file__insert_inside_prefix || return $?
+    OUTER_RUN+=( docker/compose:latest )
+    return 0
+  fi
+
+  doco_compile_outer_run_cmd__v29compat || return $?
+}
+
+
+function doco_compile_outer_run_cmd__v29compat () {
+  echo W: "Local docker version v$D_VER_MAJOR is not supported by the" \
+    "dockerized version of docker compose. Will use the host's" \
+    "docker compose command as a fallback." >&2
+  set -- "${OUTER_RUN[@]}"
+  OUTER_RUN=( env )
+  while [ "$#" -ge 1 ]; do
+    case "$1" in
+      --env ) OUTER_RUN+=( "$2" ); shift;;
+    esac
+    shift
+  done
+
+  local VAL="$COMPOSE_FILE"
+  OUTER_RUN+=( COMPOSE_FILE="$VAL" )
+
+  OUTER_RUN+=( docker compose )
 }
 
 
@@ -184,11 +213,16 @@ function doco_advise_on_compose_file_version () {
   case "$COMPOSE_FILE" in
     /dev/null ) return 0;;
   esac
+
   local CF_VER="$(sed -nre 's~^version:~~p' -- "$COMPOSE_FILE")"
   CF_VER="${CF_VER//[$'\x22\x27 \t']/}"
   local ERR=
   case "$CF_VER" in
-    '' ) ERR='none';;
+    '' )
+      # In docker v29+ compose, the version field is deprecated:
+      [ "$D_VER_MAJOR" -le 28 ] || return 0
+
+      ERR='none';;
     *$'\n'* ) ERR='too many';;
   esac
   [ -z "$ERR" ] || return 5$( echo "E: $APP_NAME:" >&2 \
